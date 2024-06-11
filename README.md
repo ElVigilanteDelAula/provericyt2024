@@ -2,6 +2,8 @@
 
 ##
 Librerias que se usan
--Flask
--Plotly
--Dash
+
++ Flask
++ Plotly
++ Dash
++ Requests
