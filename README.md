@@ -7,3 +7,4 @@ Librerias que se usan
 + Plotly
 + Dash
 + Requests
++ Sqlite3 
