@@ -19,6 +19,21 @@ class Utils:
         'high_gamma'
     ]
 
+    SENSOR_PARAMS_MAP = {
+        'signal_strength':0,
+        'attention':1,
+        'meditation':2,
+        'delta':3,
+        'theta':4,
+        'low_alpha':5,
+        'high_alpha':6,
+        'low_beta':7,
+        'high_beta':8,
+        'low_gamma':9,
+        'high_gamma':10
+    }
+
+
     def get_data(sensor: str) -> np.ndarray:
         '''
         luego de definir un sensor con el ip y puerto correspondientes, e.g.
@@ -41,7 +56,7 @@ class Utils:
             )
         except:
             print(f'Hay un problema con {sensor}')
-            return np.full(shape=len(Utils.TEST_PARAMS), fill_value=None)
+            return np.full(shape=len(Utils.SENSOR_PARAMS), fill_value=None)
             
 
     def avg_data(*arrays: np.ndarray) -> np.ndarray:
