@@ -10,7 +10,7 @@ from datetime import datetime
 from dash import Dash, dcc, html, Input, Output, callback, State
 import plotly
 
-sensors = ('http://127.0.0.1:100', 'http://127.0.0.1:101')
+sensors = ('http://127.0.0.1:5000', 'http://127.0.0.1:5001')
 params = Utils.SENSOR_PARAMS
 
 uid = datetime.now().strftime('%Y%m%d%H%M%S')
@@ -19,6 +19,7 @@ header = Database.get_header(sensors, params)
 figure_lines = {
     'data':[],
 }
+
 for param in Utils.SENSOR_PARAMS:
     figure_lines['data'].append({
         'x': [], 
