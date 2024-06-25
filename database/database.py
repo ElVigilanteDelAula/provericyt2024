@@ -3,20 +3,6 @@ import sqlite3
 from contextlib import closing
 import re
 
-SENSOR_PARAMS = [
-        'signal_strength',
-        'attention',
-        'meditation',
-        'delta',
-        'theta',
-        'low_alpha',
-        'high_alpha',
-        'low_beta',
-        'high_beta',
-        'low_gamma',
-        'high_gamma'
-    ]
-
 sqlite3.register_adapter(np.int32, lambda val: int(val))
 
 class Database:
@@ -113,13 +99,10 @@ class Database:
 
             
 if __name__ == '__main__':
-    sensors = (1,2)
-    params = ["a", "b", "c"]
-    data = [np.array([1,1,1]), np.array([None, None, None])]
-    db = Database('test.db')
-    header = Database.get_header(sensors, params)
-    uid = np.random.randint(0, 100)
-    db.create_session(uid, header)
-    db.record_data(uid, header, data)
-    db.close()
+    # db = Database('test.db')
+    # header = Database.get_header(sensors, params)
+    # uid = np.random.randint(0, 100)
+    # db.create_session(uid, header)
+    # db.record_data(uid, header, data)
+    # db.close()
     ...
