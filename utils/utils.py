@@ -75,11 +75,9 @@ class Utils:
 
 
 if __name__ =="__main__":
-    # sensors = ('http://127.0.0.1:100', 'http://127.0.0.1:101', 'http://127.0.0.1:102')
+    # sensors = ('http://127.0.0.1:5000', 'http://127.0.0.1:5001')
     # sensor_data = [Utils.get_data(sensor) for sensor in sensors]
 
     # print(sensor_data)
     # print(Utils.avg_data(*sensor_data))
     ...
-
-

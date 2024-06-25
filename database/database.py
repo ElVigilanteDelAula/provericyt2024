@@ -113,14 +113,13 @@ class Database:
 
             
 if __name__ == '__main__':
-    # sensors = (1,2)
-    # params = SENSOR_PARAMS
-    # data = [np.array([1,1,1]), np.array([None, None, None])]
-    # db = Database('test.db')
-    # header = Database.get_header(sensors, params)
-    # print(header)
-    # uid = np.random.randint(0, 100)
-    # db.create_session(uid, header)
-    # db.record_data(uid, header, data)
-    # db.close()
+    sensors = (1,2)
+    params = ["a", "b", "c"]
+    data = [np.array([1,1,1]), np.array([None, None, None])]
+    db = Database('test.db')
+    header = Database.get_header(sensors, params)
+    uid = np.random.randint(0, 100)
+    db.create_session(uid, header)
+    db.record_data(uid, header, data)
+    db.close()
     ...
