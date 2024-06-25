@@ -50,11 +50,13 @@ app.layout = html.Div([
     html.Div([
         dcc.Graph(
             id='graph1',
-            figure = figure_lines
+            figure = figure_lines,
+            animate=True
         ),
         dcc.Graph(
             id='graph2',
-            figure = figure_lines
+            figure = figure_lines,
+            animate=True
         )
     ], style={'display':'inline-block','width': '90vw', 'height': '90vh'}),
     dcc.Interval(
@@ -68,7 +70,8 @@ app.layout = html.Div([
         Output('graph2', 'extendData'),
         Output('graph1', 'extendData'),
         Input('interval-component', 'n_intervals'),
-        State('view_params', 'value')
+        State('view_params', 'value'),
+        prevent_initial_call=True
     )
 def update_graph_live(n_intervals, value):
 
