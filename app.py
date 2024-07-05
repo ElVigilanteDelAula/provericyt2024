@@ -1,7 +1,7 @@
 import plotly.graph_objects
 import plotly.subplots
-from utils.utils import Utils
-from database.database import Database
+from src.py.utils.utils import Utils
+from src.py.database.database import Database
 import numpy as np
 import time
 from datetime import datetime
