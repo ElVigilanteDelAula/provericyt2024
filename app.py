@@ -48,7 +48,7 @@ app.layout = html.Div([
         ),
         dcc.Checklist(
             Utils.SENSOR_PARAMS,
-            Utils.SENSOR_PARAMS,
+            ['signal_strength', 'attention', 'meditation'],
             id='view_params'
         ),
         dcc.Textarea(
@@ -116,7 +116,7 @@ def update_graph_live(n_intervals, sensor, value):
 
     for key in Utils.SENSOR_PARAMS_MAP:
         if key not in value:
-            to_plot[Utils.SENSOR_PARAMS_MAP[key]] = None
+            to_plot[Utils.SENSOR_PARAMS_MAP[key]] = 0
 
     t = np.full((to_plot.size,1), n_intervals)
     return [
