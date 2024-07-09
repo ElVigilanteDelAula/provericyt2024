@@ -1,7 +1,7 @@
 import plotly.graph_objects
 import plotly.subplots
-from utils.utils import Utils
-from database.database import Database
+from src.py.utils.utils import Utils
+from src.py.database.database import Database
 import numpy as np
 import time
 from datetime import datetime
@@ -10,6 +10,12 @@ from datetime import datetime
 from dash import Dash, dcc, html, Input, Output, callback, State
 import dash_bootstrap_components as dbc
 import plotly
+
+# # poner template a las graficas
+# from dash_bootstrap_templates import load_figure_template
+# import plotly.express as px
+
+# load_figure_template("solar")
 
 
 sensors = Utils.SENSORS
@@ -20,6 +26,7 @@ header = Database.get_header(sensors.values(), params)
 
 figure_lines = {
     'data':[],
+    'layout':{'template':'solar'}
 }
 
 for param in Utils.SENSOR_PARAMS:
@@ -37,7 +44,8 @@ for param in Utils.SENSOR_PARAMS:
         'name':param
         })
 
-app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
+app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc_css])
 app.layout = html.Div([
     html.Div([
         html.H1('Test', id='title'),
@@ -67,12 +75,12 @@ app.layout = html.Div([
         dcc.Graph(
             id='graph1',
             figure = figure_lines,
-            animate=True
+            animate=True,
         ),
         dcc.Graph(
             id='graph2',
             figure = figure_lines,
-            animate=True
+            animate=True,
         )
     ], style={
         'display':'block-flex',
@@ -87,7 +95,7 @@ app.layout = html.Div([
             interval=1*1000, # in milliseconds
             n_intervals=0
         )
-], style={'display':'flex'})
+],className="dbc" ,style={'display':'flex'})
 
 @callback(
         Output('graph2', 'extendData'),
