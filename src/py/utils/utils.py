@@ -2,36 +2,18 @@ import requests
 import numpy as np
 import json
 
+
 class Utils:
 
-    TEST_PARAMS = ['a', 'b']
-    SENSOR_PARAMS = [
-        'signal_strength',
-        'attention',
-        'meditation',
-        'delta',
-        'theta',
-        'low_alpha',
-        'high_alpha',
-        'low_beta',
-        'high_beta',
-        'low_gamma',
-        'high_gamma'
-    ]
+    with open('config.json') as file:
 
-    SENSOR_PARAMS_MAP = {
-        'signal_strength':0,
-        'attention':1,
-        'meditation':2,
-        'delta':3,
-        'theta':4,
-        'low_alpha':5,
-        'high_alpha':6,
-        'low_beta':7,
-        'high_beta':8,
-        'low_gamma':9,
-        'high_gamma':10
-    }
+        config = json.load(file)
+
+        SENSOR_PARAMS = config['parameters']
+
+        SENSOR_PARAMS_MAP = config['parameter_map']
+
+        SENSORS = config['sensors']
 
 
     def get_data(sensor: str) -> np.ndarray:
@@ -50,9 +32,9 @@ class Utils:
         si no se obtiene, devuelve None
         '''
         try:
-            request = requests.get(sensor, stream=True, timeout=0.1)
+            request = requests.get(sensor, stream=True, timeout=0.5)
             return np.array(
-                json.loads(request.json()['data'])
+                request.json()['data']
             )
         except:
             print(f'Hay un problema con {sensor}')
@@ -75,9 +57,10 @@ class Utils:
 
 
 if __name__ =="__main__":
-    # sensors = ('http://127.0.0.1:5000', 'http://127.0.0.1:5001')
+    # request = requests.get('http://192.168.152.123:85/', stream=True, timeout=0.5)
+    # print(json.loads(request.json()["data"]))
+    # sensors = ('http://192.168.152.123:85/', )
     # sensor_data = [Utils.get_data(sensor) for sensor in sensors]
 
     # print(sensor_data)
-    # print(Utils.avg_data(*sensor_data))
     ...
