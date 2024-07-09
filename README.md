@@ -29,6 +29,9 @@ Librerias que se usan
 + Tiene que haber una mejor manera de implementar los parametros del sensor para la base de datos
 + puede que esa no sea la manera de usar un archivo de configuracion
 + tiene que haber una mejor manera de checar si las tablas estan creadas
++ sería bueno que cada cliente de esp8266 tuviera un ip estático
++ Sería bueno usar un esp8266 para hostear a las demás, y a la computadora (como hotspot)
++ Hay que crear otro archivo donde estén los componentes que van en `app_layout` dentro de `app.py`para que sea más fácil de leer
 
 ## Estructura
 
