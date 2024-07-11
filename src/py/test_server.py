@@ -11,3 +11,6 @@ def data():
     return jsonify(
         {"data":np.random.random_sample((11)).tolist()}
     )
+
+if __name__ =="__main__":
+    app.run(debug=True)
