@@ -113,10 +113,8 @@ def update_graph_live(n_intervals, sensor, value):
 
     try:
         db.record_data(uid, header, sensor_live)
-        db.close()
     except:
         db.create_session(uid, header)
-        db.close()
         print(f'no existia la tabla de sesion_{uid}')
 
 
@@ -145,10 +143,8 @@ def update_output(n_clicks, notes):
     db = Database('test.db')
     try:
         db.record_session_info(uid, sensors.values(),notes)
-        db.close()
     except:
         db.create_session_table()
-        db.close()
         print('no existia la tabla de sesion')
 
     return 'Test (recorded)'
@@ -157,17 +153,4 @@ def update_output(n_clicks, notes):
 
 if __name__ =="__main__":
     app.run(debug=True)
-    # db = Database('test.db')
-    # db.create_session(uid, header)
-    # try:
-    #     while True:
-    #         # app.run(debug=True)
-    #         # time.sleep(2)
-    #         # sensor_data = [Utils.get_data(sensor) for sensor in sensors]
-    #         # print(sensor_data) 
-    #         # db.record_data(uid, header, sensor_data)
-
-    # except KeyboardInterrupt:
-    #     # 
-    #     # db.close()
     

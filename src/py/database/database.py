@@ -14,14 +14,7 @@ class Database:
         Registra otros tipos de datos para guardar en la base de datos, hay
         que ver que datos se van a guardar manualmente
         '''
-        self.conn = sqlite3.connect(db)
-        
-
-    def close(self) -> None:
-        '''
-        acaba la conexion con la base de datos
-        '''
-        self.conn.close()
+        self.db = db
 
     def get_header(sensors:tuple, params:tuple) -> list[str]:
         '''
@@ -39,7 +32,8 @@ class Database:
         '''
         crea una tabla en la base de datos
         '''
-        with closing(self.conn.cursor()) as cur:
+        conn = sqlite3.connect(self.db)
+        with closing(conn.cursor()) as cur:
             cur.execute(
                 '''
                 CREATE TABLE "session" (
@@ -50,13 +44,15 @@ class Database:
                 )
                 '''
             )
+        conn.close()
         
 
     def record_session_info(self, uid:int, sensors:list, notes:str) -> None:
         '''
         registra los datos de los campos que se pueden llenar en la tabla de las sesiones
         '''
-        with closing(self.conn.cursor()) as cur:
+        conn = sqlite3.connect(self.db)
+        with closing(conn.cursor()) as cur:
                 cur.execute(
                     '''
                     INSERT INTO "session" ("id","sensors","notes")
@@ -65,14 +61,17 @@ class Database:
                     (uid, len(sensors), notes)
                 )
                 self.conn.commit()
+        conn.close()
 
     def create_session(self, uid:int, header:str) -> None:
         '''
         crea una tabla para una sesion tomando en cuenta el header que corresponda a la sesion 
         y el uid que se usa para registrar la sesion, se espera que sea el mismo
         '''
-        with closing(self.conn.cursor()) as cur:
+        conn = sqlite3.connect(self.db)
+        with closing(conn.cursor()) as cur:
             cur.execute(f'CREATE TABLE session_{uid}({header[0]})')
+        conn.close()
 
     def record_data(self, uid:int, header:list[str], data:list[np.ndarray]) -> None:
         '''
@@ -87,6 +86,7 @@ class Database:
              for i in array:
                   to_rec.append(i)
 
+        conn = sqlite3.connect(self.db)
         with closing(self.conn.cursor()) as cur:
                 cur.execute(
                     f'''
@@ -96,6 +96,7 @@ class Database:
                     to_rec
                 )
                 self.conn.commit()
+        conn.close()
                
 
             
