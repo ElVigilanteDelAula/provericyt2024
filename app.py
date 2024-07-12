@@ -1,28 +1,25 @@
-import plotly.graph_objects
-import plotly.subplots
 from src.py.utils.utils import Utils
 from src.py.database.database import Database
 import numpy as np
-import time
 from datetime import datetime
 
 
 from dash import Dash, dcc, html, Input, Output, callback, State
 import dash_bootstrap_components as dbc
-import plotly
-
-# # poner template a las graficas
-# from dash_bootstrap_templates import load_figure_template
-# import plotly.express as px
-
-# load_figure_template("solar")
-
 
 sensors = Utils.SENSORS
 params = Utils.SENSOR_PARAMS
 
 uid = datetime.now().strftime('%Y%m%d%H%M%S')
 header = Database.get_header(sensors.values(), params)
+
+db = Database("test.db")
+
+if not db.session_table_exists():
+    db.create_session_table()
+
+if not db.session_exists(uid):
+    db.create_session(uid, header)
 
 figure_lines = {
     'data':[],
@@ -111,12 +108,7 @@ def update_graph_live(n_intervals, sensor, value):
 
     db = Database('test.db')
 
-    try:
-        db.record_data(uid, header, sensor_live)
-    except:
-        db.create_session(uid, header)
-        print(f'no existia la tabla de sesion_{uid}')
-
+    db.record_data(uid, header, sensor_live)
 
     to_plot = sensor_live[list(sensors.keys()).index(sensor)]
 
@@ -141,16 +133,12 @@ def update_output(n_clicks, notes):
     esto probablemente no es la manera de hacerlo pero equis
     '''
     db = Database('test.db')
-    try:
-        db.record_session_info(uid, sensors.values(),notes)
-    except:
-        db.create_session_table()
-        print('no existia la tabla de sesion')
+    db.record_session_info(uid, sensors.values(),notes)
 
     return 'Test (recorded)'
 
 
 
 if __name__ =="__main__":
-    app.run(debug=True)
+    app.run()
     

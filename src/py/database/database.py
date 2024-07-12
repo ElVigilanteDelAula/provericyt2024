@@ -45,6 +45,25 @@ class Database:
                 '''
             )
         conn.close()
+
+    def session_table_exists(self)-> bool:
+        '''
+        revisa que la tabla de sesiones exista
+        '''
+        conn = sqlite3.connect(self.db)
+        with closing(conn.cursor()) as cur:
+            tmplist = cur.execute(
+                '''
+                SELECT name FROM sqlite_master 
+                WHERE type='table' AND name='session';
+                '''
+            ).fetchall()
+        conn.close()
+
+        if tmplist == []:
+             return 0
+        else:
+             return 1
         
 
     def record_session_info(self, uid:int, sensors:list, notes:str) -> None:
@@ -60,7 +79,7 @@ class Database:
                     ''',
                     (uid, len(sensors), notes)
                 )
-                self.conn.commit()
+                conn.commit()
         conn.close()
 
     def create_session(self, uid:int, header:str) -> None:
@@ -72,6 +91,25 @@ class Database:
         with closing(conn.cursor()) as cur:
             cur.execute(f'CREATE TABLE session_{uid}({header[0]})')
         conn.close()
+
+    def session_exists(self, uid:int)-> bool:
+        '''
+        revisa que la tabla de sesiones exista
+        '''
+        conn = sqlite3.connect(self.db)
+        with closing(conn.cursor()) as cur:
+            tmplist = cur.execute(
+                f'''
+                SELECT name FROM sqlite_master 
+                WHERE type='table' AND name='session_{uid}';
+                '''
+            ).fetchall()
+        conn.close()
+
+        if tmplist == []:
+             return 0
+        else:
+             return 1
 
     def record_data(self, uid:int, header:list[str], data:list[np.ndarray]) -> None:
         '''
@@ -87,7 +125,7 @@ class Database:
                   to_rec.append(i)
 
         conn = sqlite3.connect(self.db)
-        with closing(self.conn.cursor()) as cur:
+        with closing(conn.cursor()) as cur:
                 cur.execute(
                     f'''
                     INSERT INTO "session_{uid}" ({header[0]})
@@ -95,16 +133,6 @@ class Database:
                     ''',
                     to_rec
                 )
-                self.conn.commit()
+                conn.commit()
         conn.close()
                
-
-            
-if __name__ == '__main__':
-    # db = Database('test.db')
-    # header = Database.get_header(sensors, params)
-    # uid = np.random.randint(0, 100)
-    # db.create_session(uid, header)
-    # db.record_data(uid, header, data)
-    # db.close()
-    ...
