@@ -42,7 +42,7 @@ for param in Utils.SENSOR_PARAMS:
         })
 
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
-app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc_css])
+app = Dash(__name__, external_stylesheets=[dbc.themes.MATERIA, dbc_css])
 app.layout = html.Div([
     html.Div([
         html.H1('Test', id='title'),
@@ -140,5 +140,5 @@ def update_output(n_clicks, notes):
 
 
 if __name__ =="__main__":
-    app.run()
+    app.run(debug=True)
     
