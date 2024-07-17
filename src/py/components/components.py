@@ -1,31 +1,73 @@
+from src.py.utils.utils import Utils
+from src.py.database.database import Database
+import src.py.components.styles as styles
+
 from dash import Dash, dcc, html, Input, Output, callback, State
-from utils import Utils
+import dash_bootstrap_components as dbc
 
-sensors = Utils.SENSORS
-params = Utils.SENSOR_PARAMS
+sidebar = dbc.Stack([
+    html.H1("EEG"),
+    html.H5("session", id='main_title'),
+    html.Hr(),
+    dbc.Select(
+        ["individual", "todos"],
+        "individual",
+        id='quantity_select'
+    ),
+    dbc.Select(
+        list(Utils.SENSORS.keys()),
+        list(Utils.SENSORS.keys())[0],
+        id='sensor_select'
+    ),
+    dbc.Checklist(
+        Utils.SENSOR_PARAMS,
+        ['signal_strength', 'attention', 'meditation'],
+        switch=True,
+        id='data_checklist'
+    ),
+    dbc.Textarea(
+        placeholder='notas',
+        valid=False,
+        id='notes'
+    ),
+    dbc.Button(
+        'Registrar',
+        color='secondary',
+        id='submit'
+    )
+], style=styles.SIDEBAR_STYLE)
 
-def sidebar(dropdown_id:str, checklist_id:str, text_id:str, submit_id:str):
-    return html.Div([
-        html.H1('Test', id='title'),
-        dcc.Dropdown(
-            list(sensors.keys()),
-            list(sensors.keys())[0],
-            id="dropdown"
-        ),
-        dcc.Checklist(
-            Utils.SENSOR_PARAMS,
-            ['signal_strength', 'attention', 'meditation'],
-            id='view_params'
-        ),
-        dcc.Textarea(
-            id='notes'
-        ),
-        html.Button('Submit', id='submit-val')
-    ],style={
-        'display':'block-flex',
-        'flex_direction':'column',
-        'justify-content':'space-between',
-        'align-items':'center',
-        'width': '25vw', 
-        'height': '90vh'
-    })
+line_graph = html.Div([
+    dcc.Graph(id='line_graph')
+])
+
+bar_graph = html.Div([
+    dcc.Graph(id='bar_graph')
+])
+
+heat_graph = html.Div([
+    dcc.Graph(id='heat_graph')
+])
+
+graphs_ind = dbc.Tabs([
+        dbc.Tab([line_graph], label="lines"),
+        dbc.Tab([bar_graph], label="bars")
+    ], active_tab='lines')
+
+graphs_all = dbc.Tabs([
+        dbc.Tab([heat_graph], label="heatmap")
+    ],active_tab='heatmap')
+
+app_layout=html.Div([
+    dcc.Store(id='memory'),
+    dcc.Interval(
+        id="timer",
+        n_intervals=0,
+        interval=1000
+    ),
+    sidebar,
+    html.Div([
+        html.H3("sensor", id='sensor_name'),
+        html.Div([], id='graph_box')
+    ], style=styles.MAIN_STYLE)
+],id='all', style={"display":"flex"})

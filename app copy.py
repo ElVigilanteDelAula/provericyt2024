@@ -1,73 +1,41 @@
 from src.py.utils.utils import Utils
 from src.py.database.database import Database
 import numpy as np
+import src.py.components.components as components
 from datetime import datetime
-
 
 from dash import Dash, dcc, html, Input, Output, callback, State
 import dash_bootstrap_components as dbc
 
-sensors = Utils.SENSORS
-params = Utils.SENSOR_PARAMS
-
 uid = datetime.now().strftime('%Y%m%d%H%M%S')
-header = Database.get_header(sensors.values(), params)
+header = Database.get_header(Utils.SENSORS.values(), Utils.SENSOR_PARAMS)
 
 app = Dash(external_stylesheets=[dbc.themes.MATERIA])
 
-sidebar_style = {
-    "position": "fixed",
-    "top": 0,
-    "left": 0,
-    "bottom": 0,
-    "width": "20vw",
-    "padding": "2vw 2vw",
-    "background-color":"var(--bs-gray-300)"
-}
+app.layout= components.app_layout
 
-MAIN_STYLE = {
+def sim():
+    return np.random.random_sample((11))
 
-}
-
-sidebar = dbc.Stack([
-    html.H2("sidebar"),
-    html.Hr(),
-    dbc.Select(
-        ["individual", "todos"],
-        "individual"
-    ),
-    dbc.Select(
-        ["individual", "todos"],
-        "individual"
-    ),
-    dbc.Checklist(
-        ['uwu'],
-        switch=True
-    ),
-    dbc.Textarea(
-        placeholder='notas',
-        valid=False
-    ),
-    dbc.Button(
-        'uwu',
-        color='secondary'
-    )
-], style=sidebar_style)
-
-graphs = dbc.Stack([
-    html.Div([], style={'backgroundColor':'red'})
-])
-
-app.layout=dbc.Container(
-    dbc.Row([
-        dbc.Col(html.Div(
-            sidebar
-        ), width=4),
-        dbc.Col(html.Div(
-            graphs
-        ), width=8),
-    ])
+@callback(
+    Output('graph_box', 'children'),
+    Output('sensor_name', "children"),
+    Input('quantity_select','value'),
+    Input('sensor_select','value')
 )
+def select_quantity(qty, sensor):
+    if qty == 'individual':
+        return [components.graphs_ind], sensor
+    elif qty == 'todos':
+        return [components.graphs_all], "Todos los sensores"
+    
+@callback(
+    Output('main_title', "children"),
+    Output("memory", "data"),
+    Input('all', "children")
+)
+def on_startup(children):
+    return f"session_{uid}", {"uid":uid}
 
 if __name__ =="__main__":
     app.run(debug=True)
