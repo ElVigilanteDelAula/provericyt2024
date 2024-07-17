@@ -4,6 +4,7 @@ import src.py.components.styles as styles
 
 from dash import Dash, dcc, html, Input, Output, callback, State
 import dash_bootstrap_components as dbc
+import plotly.graph_objects as go
 
 sidebar = dbc.Stack([
     html.H1("EEG"),
@@ -37,8 +38,13 @@ sidebar = dbc.Stack([
     )
 ], style=styles.SIDEBAR_STYLE)
 
+line_figure = go.Figure(
+    data=go.Scatter(
+    )
+)
+
 line_graph = html.Div([
-    dcc.Graph(id='line_graph')
+    dcc.Graph(figure = line_figure, id='line_graph')
 ])
 
 bar_graph = html.Div([

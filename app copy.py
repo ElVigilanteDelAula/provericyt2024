@@ -4,7 +4,7 @@ import numpy as np
 import src.py.components.components as components
 from datetime import datetime
 
-from dash import Dash, dcc, html, Input, Output, callback, State
+from dash import Dash, Input, Output, callback, State, no_update
 import dash_bootstrap_components as dbc
 
 uid = datetime.now().strftime('%Y%m%d%H%M%S')
@@ -36,6 +36,45 @@ def select_quantity(qty, sensor):
 )
 def on_startup(children):
     return f"session_{uid}", {"uid":uid}
+
+@callback(
+    Output("memory", "data",  allow_duplicate=True),
+    State("memory", "data"),
+    Input('timer', "n_intervals"),
+    prevent_initial_call=True
+)
+def store_data(data, intervals):
+    tmp = {
+        "uid":data['uid'],
+    }
+
+    for sensor in Utils.SENSORS.keys():
+        tmp.update({sensor:{}})
+        for key, value in Utils.SENSOR_PARAMS_MAP.items():
+            tmp[sensor].update({key:sim()[value]})
+
+    return tmp
+
+@callback(
+    Output("line_graph", "extendData"),
+    State('sensor_select','value'),
+    State('data_checklist','value'),
+    State('timer', "n_intervals"),
+    Input("memory", "data"),
+    prevent_initial_call=True
+)
+def update_lines(sensor,checked,timer,data):
+    to_plot = []
+    for check in checked:
+        to_plot.append(data[sensor][check])
+    
+    t = np.full(len(to_plot), timer)
+
+    print(t)
+
+
+
+
 
 if __name__ =="__main__":
     app.run(debug=True)
