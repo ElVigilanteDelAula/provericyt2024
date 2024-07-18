@@ -75,7 +75,7 @@ def update_lines(sensor,checked,timer,data):
     
     t = np.full((len(to_plot),1), timer)
 
-    return [{"x":t, "y":to_plot}, np.arange(len(to_plot)), 10]
+    return [{"x":t, "y":to_plot}, np.arange(len(to_plot)), 15]
 
 @callback(
     Output("bar_graph", "extendData"),
