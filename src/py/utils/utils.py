@@ -107,7 +107,7 @@ def heat_factory(sensors):
                 y=[],
                 x=[i],
                 colorscale="reds",
-                zmax=1,
+                zmax=100,
                 zmin=0,
                 showscale=False
             )
@@ -118,7 +118,7 @@ def heat_factory(sensors):
                 y=[],
                 x=[i+1],
                 colorscale="greens",
-                zmax=1,
+                zmax=100,
                 zmin=0,
                 showscale=False
             )
