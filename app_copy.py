@@ -8,7 +8,18 @@ from dash import Dash, Input, Output, callback, State, no_update, ctx
 import dash_bootstrap_components as dbc
 
 uid = datetime.now().strftime('%Y%m%d%H%M%S')
-header = Database.get_header(Utils.SENSORS.values(), Utils.SENSOR_PARAMS)
+header = Database.get_params_header(Utils.SENSORS.values(), Utils.SENSOR_PARAMS)
+
+db = Database("test.db")
+
+if not db.session_table_exists():
+    db.create_session_table()
+
+if not db.session_exists(uid):
+    db.create_session(uid, header)
+
+if not db.events_exists(uid):
+    db.create_events(uid)
 
 app = Dash(external_stylesheets=[dbc.themes.MATERIA])
 
@@ -47,15 +58,17 @@ def store_data(data, intervals):
 
     sensor_live = [Utils.get_data(sensor) for sensor in Utils.SENSORS.values()]
 
+    db.record_data(data['uid'],header,sensor_live)
+
     tmp = {
         "uid":data['uid'],
     }
 
-    for sensor, ref in Utils.SENSORS.items():
+    for sensor, readings in zip(Utils.SENSORS.keys(),sensor_live):
         tmp.update({sensor:{}})
-        for key, value in Utils.SENSOR_PARAMS_MAP.items():
+        for key, value in zip(Utils.SENSOR_PARAMS_MAP.keys(), readings):
             tmp[sensor].update(
-                {key:Utils.get_data(ref)[value]}
+                {key:value}
             )
 
     return tmp
@@ -131,21 +144,25 @@ def update_heatmap(fig, timer, data):
 
 @callback(
     Output("all", "children"),
+    State("memory", "data"),
+    State('timer', "n_intervals"),
     event_factory(Utils.EVENTS)[1],
     prevent_initial_call=True
 )
-def record_event(*args):
-    print(ctx.triggered_id)
+def record_event(data, time, *args):
+    db.record_event(data["uid"], time, ctx.triggered_id)
     return no_update
 
 @callback(
-    Output("all", "children", allow_duplicate=True),
+    Output("submit", "color"),
+    State("notes", "value"),
+    State("memory", "data"),
     Input("submit", "n_clicks"),
     prevent_initial_call=True
 )
-def record_event(*args):
-    print("submit")
-    return no_update
+def record_event(notas,data, n_clicks):
+    db.record_session_info(data["uid"],Utils.SENSORS.keys(),notas)
+    return "success"
 
 if __name__ =="__main__":
     app.run(debug=True)

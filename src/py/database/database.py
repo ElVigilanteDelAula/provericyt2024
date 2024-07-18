@@ -16,7 +16,7 @@ class Database:
         '''
         self.db = db
 
-    def get_header(sensors:tuple, params:tuple) -> list[str]:
+    def get_params_header(sensors:tuple, params:tuple) -> list[str]:
         '''
         devuelve el encabezado de la tabla tomando en cuenta a los parametros y sensores,
         y tambien un elemento para hacer reemplazos en sql
@@ -136,3 +136,47 @@ class Database:
                 conn.commit()
         conn.close()
                
+    def create_events(self, uid:int) -> None:
+        '''
+        crea una tabla para una sesion tomando en cuenta el header que corresponda a la sesion 
+        y el uid que se usa para registrar la sesion, se espera que sea el mismo
+        '''
+        conn = sqlite3.connect(self.db)
+        with closing(conn.cursor()) as cur:
+            cur.execute(f'CREATE TABLE events_{uid}("time", "event")')
+        conn.close()
+
+    def events_exists(self, uid:int)-> bool:
+        '''
+        revisa que la tabla de sesiones exista
+        '''
+        conn = sqlite3.connect(self.db)
+        with closing(conn.cursor()) as cur:
+            tmplist = cur.execute(
+                f'''
+                SELECT name FROM sqlite_master 
+                WHERE type='table' AND name='events_{uid}';
+                '''
+            ).fetchall()
+        conn.close()
+
+        if tmplist == []:
+             return 0
+        else:
+             return 1
+
+    def record_event(self, uid:int, time, event) -> None:
+        '''
+        registra los datos de los campos que se pueden llenar en la tabla de las sesiones
+        '''
+        conn = sqlite3.connect(self.db)
+        with closing(conn.cursor()) as cur:
+                cur.execute(
+                    f'''
+                    INSERT INTO "events_{uid}" ("time","event")
+                    VALUES (?, ?)
+                    ''',
+                    (time, event)
+                )
+                conn.commit()
+        conn.close()

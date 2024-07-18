@@ -11,7 +11,7 @@ sensors = Utils.SENSORS
 params = Utils.SENSOR_PARAMS
 
 uid = datetime.now().strftime('%Y%m%d%H%M%S')
-header = Database.get_header(sensors.values(), params)
+header = Database.get_params_header(sensors.values(), params)
 
 db = Database("test.db")
 
