@@ -43,6 +43,7 @@ def heat_factory(sensors):
                 colorscale="reds",
                 zmax=1,
                 zmin=0,
+                showscale=False
             )
         )
         tmp.append(
@@ -53,6 +54,7 @@ def heat_factory(sensors):
                 colorscale="greens",
                 zmax=1,
                 zmin=0,
+                showscale=False
             )
         )
     return tmp
