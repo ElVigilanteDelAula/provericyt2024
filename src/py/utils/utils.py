@@ -1,6 +1,9 @@
+import plotly.graph_objects as go
+import dash_bootstrap_components as dbc
 import requests
 import numpy as np
 import json
+from dash import Input, Output, State
 
 
 class Utils:
@@ -14,6 +17,8 @@ class Utils:
         SENSOR_PARAMS_MAP = config['parameter_map']
 
         SENSORS = config['sensors']
+
+        EVENTS = config["events"]
 
 
     def get_data(sensor: str) -> np.ndarray:
@@ -64,3 +69,77 @@ if __name__ =="__main__":
 
     # print(sensor_data)
     ...
+
+
+def scatter_factory(params, mode, colors=[]):
+    tmp = []
+    for param in params:
+        tmp.append(
+            go.Scatter(
+                x=[],
+                y=[],
+                mode=mode,
+                name=param,
+            )
+        )
+    return tmp
+
+
+def bar_factory(params, mode, colors=[]):
+    tmp = []
+    for param in params:
+        tmp.append(
+            go.Bar(
+                x=[],
+                y=[],
+                name=param,
+            )
+        )
+    return tmp
+
+
+def heat_factory(sensors):
+    tmp = []
+    for i in np.arange(0,(len(sensors)*2)-1,2):
+        tmp.append(
+            go.Heatmap(
+                z=[[0]],
+                y=[],
+                x=[i],
+                colorscale="reds",
+                zmax=1,
+                zmin=0,
+                showscale=False
+            )
+        )
+        tmp.append(
+            go.Heatmap(
+                z=[[0]],
+                y=[],
+                x=[i+1],
+                colorscale="greens",
+                zmax=1,
+                zmin=0,
+                showscale=False
+            )
+        )
+    return tmp
+
+def event_factory(events:dict):
+    tmp_components = []
+    tmp_inputs = [
+        Input("inicio", "n_clicks"),
+        Input("final", "n_clicks")
+    ]
+    for key, value in events.items():
+        tmp_components.append(
+            dbc.Button(
+                key,
+                color="secondary",
+                id=key
+            )
+        )
+        tmp_inputs.append(
+            Input(key, "n_clicks")
+        )
+    return tmp_components,tmp_inputs

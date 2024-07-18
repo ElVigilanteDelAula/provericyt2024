@@ -1,4 +1,7 @@
-from src.py.utils.utils import Utils
+from src.py.utils.utils import scatter_factory
+from src.py.utils.utils import bar_factory
+from src.py.utils.utils import heat_factory
+from src.py.utils.utils import Utils, event_factory
 from src.py.database.database import Database
 import src.py.components.styles as styles
 import numpy as np
@@ -6,58 +9,6 @@ import numpy as np
 from dash import Dash, dcc, html, Input, Output, callback, State
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
-
-def scatter_factory(params, mode, colors=[]):
-    tmp = []
-    for param in params:
-        tmp.append(
-            go.Scatter(
-                x=[],
-                y=[],
-                mode=mode,
-                name=param,
-            )
-        )
-    return tmp
-
-def bar_factory(params, mode, colors=[]):
-    tmp = []
-    for param in params:
-        tmp.append(
-            go.Bar(
-                x=[],
-                y=[],
-                name=param,
-            )
-        )
-    return tmp
-
-def heat_factory(sensors):
-    tmp = []
-    for i in np.arange(0,(len(sensors)*2)-1,2):
-        tmp.append(
-            go.Heatmap(
-                z=[[0]],
-                y=[],
-                x=[i],
-                colorscale="reds",
-                zmax=1,
-                zmin=0,
-                showscale=False
-            )
-        )
-        tmp.append(
-            go.Heatmap(
-                z=[[0]],
-                y=[],
-                x=[i+1],
-                colorscale="greens",
-                zmax=1,
-                zmin=0,
-                showscale=False
-            )
-        )
-    return tmp
 
 sidebar = dbc.Stack([
     html.H1("EEG"),
@@ -73,12 +24,31 @@ sidebar = dbc.Stack([
         list(Utils.SENSORS.keys())[0],
         id='sensor_select'
     ),
-    dbc.Checklist(
-        Utils.SENSOR_PARAMS,
-        ['signal_strength', 'attention', 'meditation'],
-        switch=True,
-        id='data_checklist'
-    ),
+    dbc.Accordion([
+        dbc.AccordionItem([
+            dbc.Checklist(
+                Utils.SENSOR_PARAMS,
+                ['signal_strength', 'attention', 'meditation'],
+                switch=True,
+                id='data_checklist'
+            )
+        ], title="señales"),
+        dbc.AccordionItem([
+            dbc.ButtonGroup([
+                dbc.Button(
+                    "inicio",
+                    color="primary",
+                    id="inicio"
+                ),
+                *event_factory(Utils.EVENTS)[0],
+                dbc.Button(
+                    "final",
+                    color="primary",
+                    id="final"
+                )
+            ],vertical=True, id="events")
+        ], title="eventos")
+    ]),
     dbc.Textarea(
         placeholder='notas',
         valid=False,

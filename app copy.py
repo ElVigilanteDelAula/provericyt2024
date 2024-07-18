@@ -1,10 +1,10 @@
-from src.py.utils.utils import Utils
+from src.py.utils.utils import Utils, event_factory
 from src.py.database.database import Database
 import numpy as np
 import src.py.components.components as components
 from datetime import datetime
 
-from dash import Dash, Input, Output, callback, State, no_update
+from dash import Dash, Input, Output, callback, State, no_update, ctx
 import dash_bootstrap_components as dbc
 
 uid = datetime.now().strftime('%Y%m%d%H%M%S')
@@ -44,14 +44,19 @@ def on_startup(children):
     prevent_initial_call=True
 )
 def store_data(data, intervals):
+
+    sensor_live = [Utils.get_data(sensor) for sensor in Utils.SENSORS.values()]
+
     tmp = {
         "uid":data['uid'],
     }
 
-    for sensor in Utils.SENSORS.keys():
+    for sensor, ref in Utils.SENSORS.items():
         tmp.update({sensor:{}})
         for key, value in Utils.SENSOR_PARAMS_MAP.items():
-            tmp[sensor].update({key:sim()[value]})
+            tmp[sensor].update(
+                {key:Utils.get_data(ref)[value]}
+            )
 
     return tmp
 
@@ -123,6 +128,24 @@ def update_heatmap(fig, timer, data):
         15
     ]
 
+
+@callback(
+    Output("all", "children"),
+    event_factory(Utils.EVENTS)[1],
+    prevent_initial_call=True
+)
+def record_event(*args):
+    print(ctx.triggered_id)
+    return no_update
+
+@callback(
+    Output("all", "children", allow_duplicate=True),
+    Input("submit", "n_clicks"),
+    prevent_initial_call=True
+)
+def record_event(*args):
+    print("submit")
+    return no_update
 
 if __name__ =="__main__":
     app.run(debug=True)
