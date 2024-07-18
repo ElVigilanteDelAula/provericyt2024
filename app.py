@@ -140,5 +140,5 @@ def update_output(n_clicks, notes):
 
 
 if __name__ =="__main__":
-    app.run(debug=True)
+    app.run(debug=True, port="8080")
     

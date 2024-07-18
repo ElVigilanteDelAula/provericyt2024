@@ -64,16 +64,64 @@ def store_data(data, intervals):
     prevent_initial_call=True
 )
 def update_lines(sensor,checked,timer,data):
+
     to_plot = []
-    for check in checked:
-        to_plot.append(data[sensor][check])
+
+    for key, value in data[sensor].items():
+        if key in checked:
+            to_plot.append([value])
+        else:
+            to_plot.append([None])
     
-    t = np.full(len(to_plot), timer)
+    t = np.full((len(to_plot),1), timer)
 
-    print(t)
+    return [{"x":t, "y":to_plot}, np.arange(len(to_plot)), 10]
 
+@callback(
+    Output("bar_graph", "extendData"),
+    State('sensor_select','value'),
+    State('data_checklist','value'),
+    State('timer', "n_intervals"),
+    Input("memory", "data"),
+    prevent_initial_call=True
+)
+def update_bars(sensor,checked,timer,data):
 
+    to_plot = []
 
+    for key, value in data[sensor].items():
+        if key in checked:
+            to_plot.append([value])
+        else:
+            to_plot.append([None])
+    
+    t = np.arange(len(to_plot))[:, np.newaxis]
+
+    return [{"x":t, "y":to_plot}, np.arange(len(to_plot)), 1]
+
+@callback(
+    Output("heat_graph", "extendData"),
+    State("heat_graph", "figure"),
+    State('timer', "n_intervals"),
+    Input("memory", "data"),
+    prevent_initial_call=True
+)
+def update_heatmap(fig, timer, data):
+    to_z = []
+    for key in Utils.SENSORS.keys():
+        to_z.append([[data[key]["attention"]]])
+        to_z.append([[data[key]["meditation"]]])
+    
+    t = np.full(
+        (len(Utils.SENSORS.keys())*2,1),
+        timer
+    )
+
+    return [
+        {"z":to_z, "y":t}, 
+        np.arange(len(Utils.SENSORS.keys())*2), 
+        15
+    ]
 
 
 if __name__ =="__main__":
