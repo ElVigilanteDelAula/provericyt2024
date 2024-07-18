@@ -63,7 +63,7 @@ sidebar = dbc.Stack([
 
 line_layout = go.Layout(
     yaxis={
-        "range":(0,1)
+        "range":(0,100)
     }
 )
 
@@ -79,7 +79,7 @@ line_graph = html.Div([
 
 bar_layout = go.Layout(
     yaxis={
-        "range":(0,1)
+        "range":(0,100)
     }
 )
 
