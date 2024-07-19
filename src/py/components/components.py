@@ -13,6 +13,7 @@ import plotly.graph_objects as go
 sidebar = dbc.Stack([
     html.H1("EEG"),
     html.H5("session", id='main_title'),
+    html.H5("time", id="time_text"),
     html.Hr(),
     dbc.Select(
         ["individual", "todos"],
@@ -113,11 +114,11 @@ heat_graph = html.Div([
 graphs_ind = dbc.Tabs([
         dbc.Tab([line_graph], label="lines"),
         dbc.Tab([bar_graph], label="bars")
-    ], active_tab='lines')
+    ],active_tab="tab-1")
 
 graphs_all = dbc.Tabs([
         dbc.Tab([heat_graph], label="heatmap")
-    ],active_tab='heatmap')
+    ],active_tab="tab-0")
 
 app_layout=html.Div([
     dcc.Store(id='memory'),
