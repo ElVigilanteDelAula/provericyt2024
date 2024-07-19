@@ -32,6 +32,10 @@
         "sensor_c":"http://192.168.152.176:80/",
         "sensor_d":"http://192.168.152.224:80/",
         "sensor_e":"http://192.168.152.123:80/"
+    },
+    "events":{
+        "evento1":"tag1",
+        "evento2":"tag2"
     }
 
 }

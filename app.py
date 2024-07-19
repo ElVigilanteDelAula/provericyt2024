@@ -1,173 +1,169 @@
-import plotly.graph_objects
-import plotly.subplots
-from src.py.utils.utils import Utils
+from src.py.utils.utils import Utils, event_factory
 from src.py.database.database import Database
 import numpy as np
-import time
+import src.py.components.components as components
 from datetime import datetime
 
-
-from dash import Dash, dcc, html, Input, Output, callback, State
+from dash import Dash, Input, Output, callback, State, no_update, ctx
 import dash_bootstrap_components as dbc
-import plotly
-
-# # poner template a las graficas
-# from dash_bootstrap_templates import load_figure_template
-# import plotly.express as px
-
-# load_figure_template("solar")
-
-
-sensors = Utils.SENSORS
-params = Utils.SENSOR_PARAMS
 
 uid = datetime.now().strftime('%Y%m%d%H%M%S')
-header = Database.get_header(sensors.values(), params)
+header = Database.get_params_header(Utils.SENSORS.values(), Utils.SENSOR_PARAMS)
 
-figure_lines = {
-    'data':[],
-    'layout':{'template':'solar'}
-}
+db = Database("test.db")
 
-for param in Utils.SENSOR_PARAMS:
-    figure_lines['data'].append({
-        'x': [], 
-        'y': [], 
-        'type':'lines', 
-        'name':param
-        })
-for param in Utils.SENSOR_PARAMS:
-    figure_lines['data'].append({
-        'x': [], 
-        'y': [], 
-        'type':'bar', 
-        'name':param
-        })
+if not db.session_table_exists():
+    db.create_session_table()
 
-dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
-app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc_css])
-app.layout = html.Div([
-    html.Div([
-        html.H1('Test', id='title'),
-        dcc.Dropdown(
-            list(sensors.keys()),
-            list(sensors.keys())[0],
-            id="dropdown"
-        ),
-        dcc.Checklist(
-            Utils.SENSOR_PARAMS,
-            ['signal_strength', 'attention', 'meditation'],
-            id='view_params'
-        ),
-        dcc.Textarea(
-            id='notes'
-        ),
-        html.Button('Submit', id='submit-val')
-    ],style={
-        'display':'block-flex',
-        'flex_direction':'column',
-        'justify-content':'space-between',
-        'align-items':'center',
-        'width': '25vw', 
-        'height': '90vh'
-    }),
-    html.Div([
-        dcc.Graph(
-            id='graph1',
-            figure = figure_lines,
-            animate=True,
-        ),
-        dcc.Graph(
-            id='graph2',
-            figure = figure_lines,
-            animate=True,
-        )
-    ], style={
-        'display':'block-flex',
-        'flex_direction':'column',
-        'justify-content':'center',
-        'align-items':'center',
-        'width': '70vw', 
-        'height': '90vh'
-    }),
-    dcc.Interval(
-            id='interval-component',
-            interval=1*1000, # in milliseconds
-            n_intervals=0
-        )
-],className="dbc" ,style={'display':'flex'})
+if not db.session_exists(uid):
+    db.create_session(uid, header)
+
+if not db.events_exists(uid):
+    db.create_events(uid)
+
+app = Dash(external_stylesheets=[dbc.themes.MATERIA])
+
+app.layout= components.app_layout
+
+def sim():
+    return np.random.random_sample((11))
 
 @callback(
-        Output('graph2', 'extendData'),
-        Output('graph1', 'extendData'),
-        Input('interval-component', 'n_intervals'),
-        Input('dropdown', 'value'),
-        State('view_params', 'value'),
-        prevent_initial_call=True
-    )
-def update_graph_live(n_intervals, sensor, value):
-
-    sensor_live = [Utils.get_data(sensor) for sensor in sensors.values()]
-
-    db = Database('test.db')
-
-    try:
-        db.record_data(uid, header, sensor_live)
-        db.close()
-    except:
-        db.create_session(uid, header)
-        db.close()
-        print(f'no existia la tabla de sesion_{uid}')
-
-
-    to_plot = sensor_live[list(sensors.keys()).index(sensor)]
-
-    for key in Utils.SENSOR_PARAMS_MAP:
-        if key not in value:
-            to_plot[Utils.SENSOR_PARAMS_MAP[key]] = 0
-
-    t = np.full((to_plot.size,1), n_intervals)
-    return [
-        ({'x':t, 'y':to_plot[:, np.newaxis]}, np.arange(to_plot.size), 10),
-        ({'x':np.arange(to_plot.size)[:, np.newaxis], 'y':to_plot[:, np.newaxis]}, np.arange(to_plot.size,to_plot.size*2), 1)
-    ]
+    Output('graph_box', 'children'),
+    Output('sensor_name', "children"),
+    Input('quantity_select','value'),
+    Input('sensor_select','value')
+)
+def select_quantity(qty, sensor):
+    if qty == 'individual':
+        return [components.graphs_ind], sensor
+    elif qty == 'todos':
+        return [components.graphs_all], "Todos los sensores"
+    
+@callback(
+    Output('main_title', "children"),
+    Output("memory", "data"),
+    Input('all', "children")
+)
+def on_startup(children):
+    return f"session_{uid}", {"uid":uid}
 
 @callback(
-    Output('title', 'children'),
-    Input('submit-val', 'n_clicks'),
-    State('notes', 'value'),
+    Output("memory", "data",  allow_duplicate=True),
+    State("memory", "data"),
+    Input('timer', "n_intervals"),
     prevent_initial_call=True
 )
-def update_output(n_clicks, notes):
-    '''
-    esto probablemente no es la manera de hacerlo pero equis
-    '''
-    db = Database('test.db')
-    try:
-        db.record_session_info(uid, sensors.values(),notes)
-        db.close()
-    except:
-        db.create_session_table()
-        db.close()
-        print('no existia la tabla de sesion')
+def store_data(data, intervals):
 
-    return 'Test (recorded)'
+    sensor_live = [Utils.get_data(sensor) for sensor in Utils.SENSORS.values()]
+
+    db.record_data(data['uid'],header,sensor_live)
+
+    tmp = {
+        "uid":data['uid'],
+    }
+
+    for sensor, readings in zip(Utils.SENSORS.keys(),sensor_live):
+        tmp.update({sensor:{}})
+        for key, value in zip(Utils.SENSOR_PARAMS_MAP.keys(), readings):
+            tmp[sensor].update(
+                {key:value}
+            )
+
+    return tmp
+
+@callback(
+    Output("line_graph", "extendData"),
+    State('sensor_select','value'),
+    State('data_checklist','value'),
+    State('timer', "n_intervals"),
+    Input("memory", "data"),
+    prevent_initial_call=True
+)
+def update_lines(sensor,checked,timer,data):
+
+    to_plot = []
+
+    for key, value in data[sensor].items():
+        if key in checked:
+            to_plot.append([value])
+        else:
+            to_plot.append([None])
+    
+    t = np.full((len(to_plot),1), timer)
+
+    return [{"x":t, "y":to_plot}, np.arange(len(to_plot)), 15]
+
+@callback(
+    Output("bar_graph", "extendData"),
+    State('sensor_select','value'),
+    State('data_checklist','value'),
+    State('timer', "n_intervals"),
+    Input("memory", "data"),
+    prevent_initial_call=True
+)
+def update_bars(sensor,checked,timer,data):
+
+    to_plot = []
+
+    for key, value in data[sensor].items():
+        if key in checked:
+            to_plot.append([value])
+        else:
+            to_plot.append([None])
+    
+    t = np.arange(len(to_plot))[:, np.newaxis]
+
+    return [{"x":t, "y":to_plot}, np.arange(len(to_plot)), 1]
+
+@callback(
+    Output("heat_graph", "extendData"),
+    State("heat_graph", "figure"),
+    State('timer', "n_intervals"),
+    Input("memory", "data"),
+    prevent_initial_call=True
+)
+def update_heatmap(fig, timer, data):
+    to_z = []
+    for key in Utils.SENSORS.keys():
+        to_z.append([[data[key]["attention"]]])
+        to_z.append([[data[key]["meditation"]]])
+    
+    t = np.full(
+        (len(Utils.SENSORS.keys())*2,1),
+        timer
+    )
+
+    return [
+        {"z":to_z, "y":t}, 
+        np.arange(len(Utils.SENSORS.keys())*2), 
+        15
+    ]
 
 
+@callback(
+    Output("all", "children"),
+    State("memory", "data"),
+    State('timer', "n_intervals"),
+    event_factory(Utils.EVENTS)[1],
+    prevent_initial_call=True
+)
+def record_event(data, time, *args):
+    db.record_event(data["uid"], time, ctx.triggered_id)
+    return no_update
+
+@callback(
+    Output("submit", "color"),
+    State("notes", "value"),
+    State("memory", "data"),
+    Input("submit", "n_clicks"),
+    prevent_initial_call=True
+)
+def record_event(notas,data, n_clicks):
+    db.record_session_info(data["uid"],Utils.SENSORS.keys(),notas)
+    return "success"
 
 if __name__ =="__main__":
     app.run(debug=True)
-    # db = Database('test.db')
-    # db.create_session(uid, header)
-    # try:
-    #     while True:
-    #         # app.run(debug=True)
-    #         # time.sleep(2)
-    #         # sensor_data = [Utils.get_data(sensor) for sensor in sensors]
-    #         # print(sensor_data) 
-    #         # db.record_data(uid, header, sensor_data)
-
-    # except KeyboardInterrupt:
-    #     # 
-    #     # db.close()
     
