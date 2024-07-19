@@ -50,6 +50,7 @@ def on_startup(children):
 
 @callback(
     Output("memory", "data",  allow_duplicate=True),
+    Output("time_text", "children"),
     State("memory", "data"),
     Input('timer', "n_intervals"),
     prevent_initial_call=True
@@ -71,7 +72,7 @@ def store_data(data, intervals):
                 {key:value}
             )
 
-    return tmp
+    return tmp, intervals
 
 @callback(
     Output("line_graph", "extendData"),
