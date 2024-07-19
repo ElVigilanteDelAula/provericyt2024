@@ -139,7 +139,7 @@ def update_heatmap(fig, timer, data):
     return [
         {"z":to_z, "y":t}, 
         np.arange(len(Utils.SENSORS.keys())*2), 
-        15
+        25
     ]
 
 

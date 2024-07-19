@@ -75,7 +75,11 @@ line_figure = go.Figure(
 
 
 line_graph = html.Div([
-    dcc.Graph(figure = line_figure, id='line_graph' )
+    dcc.Graph(
+        figure = line_figure, 
+        id='line_graph',
+        style=styles.GRAPH_STYLE
+    )
 ])
 
 bar_layout = go.Layout(
@@ -90,7 +94,11 @@ bar_figure = go.Figure(
 )
 
 bar_graph = html.Div([
-    dcc.Graph(figure=bar_figure,id='bar_graph')
+    dcc.Graph(
+        figure=bar_figure,
+        id='bar_graph',
+        style=styles.GRAPH_STYLE
+    )
 ])
 
 
@@ -104,11 +112,16 @@ heat_layout = {
 
 heat_figure = go.Figure(
     data=heat_factory(Utils.SENSORS),
-    layout=heat_layout
+    layout=heat_layout,
 )
 
 heat_graph = html.Div([
-    dcc.Graph(figure=heat_figure, id='heat_graph')
+    dcc.Graph(
+        figure=heat_figure, 
+        id='heat_graph',
+        responsive=True,
+        style=styles.GRAPH_STYLE
+    )
 ])
 
 graphs_ind = dbc.Tabs([

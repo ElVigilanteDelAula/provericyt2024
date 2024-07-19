@@ -14,3 +14,7 @@ MAIN_STYLE = {
     "flex": "0 1 80vw",
     "padding": "2vw 2vw",
 }
+
+GRAPH_STYLE = {
+    "height":"75vh"
+}
