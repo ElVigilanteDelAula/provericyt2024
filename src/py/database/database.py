@@ -82,6 +82,21 @@ class Database:
                 conn.commit()
         conn.close()
 
+    def update_notes(self, uid:int, notes:str) -> None:
+        conn = sqlite3.connect(self.db)
+        with closing(conn.cursor()) as cur:
+                cur.execute(
+                    f'''
+                    UPDATE session
+                    SET notes = ?
+                    WHERE
+                        session.id = ?
+                    ''',
+                    (notes,uid)
+                )
+                conn.commit()
+        conn.close()
+
     def create_session(self, uid:int, header:str) -> None:
         '''
         crea una tabla para una sesion tomando en cuenta el header que corresponda a la sesion 

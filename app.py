@@ -46,6 +46,7 @@ def select_quantity(qty, sensor):
     Input('all', "children")
 )
 def on_startup(children):
+    db.record_session_info(uid, Utils.SENSORS.keys(),"")
     return f"session_{uid}", {"uid":uid}
 
 @callback(
@@ -162,7 +163,7 @@ def record_event(data, time, *args):
     prevent_initial_call=True
 )
 def record_event(notas,data, n_clicks):
-    db.record_session_info(data["uid"],Utils.SENSORS.keys(),notas)
+    db.update_notes(data["uid"], notas)
     return "success"
 
 if __name__ =="__main__":
