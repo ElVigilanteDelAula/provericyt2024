@@ -4,6 +4,8 @@ import requests
 import numpy as np
 import json
 from dash import Input, Output, State
+import re
+from datetime import datetime
 
 
 class Utils:
@@ -136,10 +138,20 @@ def event_factory(events:dict):
             dbc.Button(
                 key,
                 color="secondary",
-                id=key
+                id=key,
+                style=value
             )
         )
         tmp_inputs.append(
             Input(key, "n_clicks")
         )
     return tmp_components,tmp_inputs
+
+def get_uid(name:str)->str:
+    return re.findall(r"\d+", name)
+
+def get_date(name:int)->datetime:
+    return datetime.strptime(
+        re.findall(r"\d+", str(name))[0],
+        r'%Y%m%d%H%M%S'
+    ).strftime(r"%c")
