@@ -2,6 +2,8 @@ import numpy as np
 import sqlite3
 from contextlib import closing
 import re
+import pandas as pd
+from src.py.utils.utils import get_date
 
 sqlite3.register_adapter(np.int32, lambda val: int(val))
 sqlite3.register_adapter(np.int64, lambda val: int(val))
@@ -195,3 +197,22 @@ class Database:
                 )
                 conn.commit()
         conn.close()
+
+    def get_session(self, uid:int, start:int, stop:int):
+        with closing(sqlite3.connect(self.db)) as conn:
+            return pd.read_sql(
+                f"SELECT * FROM session_{uid} LIMIT {stop-start} OFFSET {start}", conn
+            )
+        
+    def get_events(self, uid:int):
+        with closing(sqlite3.connect(self.db)) as conn:
+            return pd.read_sql(
+                f"SELECT * FROM events_{uid}", conn
+            )
+        
+    def list_sessions(self):
+        with closing(sqlite3.connect(self.db)) as conn:
+            sessions = pd.read_sql("SELECT id, notes FROM session", conn)
+            sessions["date"] = sessions["id"].apply(get_date)
+
+            return sessions
