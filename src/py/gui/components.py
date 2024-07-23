@@ -3,55 +3,65 @@ import dash_bootstrap_components as dbc
 import src.py.gui.styles as styles
 from src.py.database.database import Database
 import plotly.graph_objects as go
+from src.py.utils.utils import Utils
+import numpy as np
+from plotly.subplots import make_subplots
 
 db = Database("test.db")
 session_list = db.list_sessions()
-test_events = db.get_events(20240719172230)
-test_session = db.get_session(20240719172230, test_events.iloc[0, 0], test_events.iloc[-1,0])
+test_events = db.get_events(20240722184224)
+test_session = db.get_session(20240722184224, test_events.iloc[0, 0], test_events.iloc[-1,0])
 
 sidebar = dbc.Stack([
     html.H1("EEG"),
+    dbc.Button(
+        "Refresh",
+        id="refreshed_button",
+        color="transparent"
+    ),
     html.Hr(),
-    html.Div([
-        dcc.DatePickerRange(),
-    ]),
     dash_table.DataTable(
-        session_list.to_dict("records"),
-        [{"name": i, "id": i} for i in session_list.iloc[:,[2,1]].columns],
+        data=session_list.to_dict("records"),
+        columns=[{"name": i, "id": i} for i in session_list.loc[:,["date","notes"]].columns],
         row_selectable="single",
         filter_action="native",
         sort_action="native",
         style_data={
             'whiteSpace': 'normal',
             'height': 'auto',
-            'width': '20vw',
+            'backgroundColor': 'var(--bs-gray-300)',
+            'color': 'var(--bs-btn-color)'
         },
-        page_size=6
-    )
-], style=styles.SIDEBAR_STYLE)
+        style_cell={
+            'textOverflow': 'ellipsis',
+            'maxWidth': "8vw",
+            'minWidth': "5vw"
+        },
+        style_header={
+            'backgroundColor': 'var(--bs-gray-400)',
+            'color': 'var(--bs-btn-color)'
+        },
+        style_filter={
+            'backgroundColor': 'var(--bs-gray-400)',
+            'color': 'var(--bs-btn-color)'
+        },
+        page_size=10,
+        style_as_list_view=True,
+        id="data_table"
+    ),
+     dbc.Button("Open Offcanvas", id="open-offcanvas", color="transparent"),
+], style=styles.SIDEBAR_STYLE, gap=1)
 
-line_figure = go.Figure(
-    data=[
-        go.Scatter(
-            x=test_session.index,
-            y=test_session["attention0"],
-            yaxis="y"
-        ),
-        go.Scatter(
-            x=test_session.index,
-            y=test_session["meditation0"]+100,
-            yaxis="y"
-        )
-    ],
-    layout={
-        "xaxis":{
-            "rangeslider":{
-                "visible":True
-            }
-        }
-    }
-).add_vline(50, annotation_text="olam")
+offcanvas = dbc.Offcanvas([
+    dbc.Checklist(
+                Utils.SENSOR_PARAMS,
+                ['signal_strength', 'attention', 'meditation'],
+                switch=True,
+                id='data_checklist'
+            )
+], id="offcanvas")
 
+line_figure = go.Figure()
 
 line_graph = html.Div([
     dcc.Graph(
@@ -66,13 +76,14 @@ graphs = dbc.Tabs([
     ],active_tab="tab-0")
 
 main_view = html.Div([
-    html.H3("session"),
-    html.P("notes"),
+    html.H3("session", id="session_title"),
+    html.P("notes", id="session_notes"),
     html.Hr(),
     graphs
 ],style=styles.MAIN_STYLE)
 
 app_layout = html.Div([
     sidebar,
+    offcanvas,
     main_view
 ], className="dbc dbc-row-selectable", style={"display":"flex"})
