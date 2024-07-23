@@ -11,4 +11,4 @@ app = Dash(__name__, external_stylesheets=[dbc.themes.MATERIA, dbc_css])
 app.layout= components.app_layout
 
 if __name__ =="__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", debug=True)
