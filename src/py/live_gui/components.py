@@ -25,6 +25,7 @@ sidebar = dbc.Stack([
         list(Utils.SENSORS.keys())[0],
         id='sensor_select'
     ),
+    html.Hr(),
     dbc.Accordion([
         dbc.AccordionItem([
             dbc.Checklist(
@@ -34,22 +35,13 @@ sidebar = dbc.Stack([
                 id='data_checklist'
             )
         ], title="señales"),
-        dbc.AccordionItem([
-            dbc.ButtonGroup([
-                dbc.Button(
-                    "inicio",
-                    color="primary",
-                    id="inicio"
-                ),
-                *event_factory(Utils.EVENTS)[0],
-                dbc.Button(
-                    "final",
-                    color="primary",
-                    id="final"
-                )
-            ],vertical=True, id="events")
-        ], title="eventos")
+        dbc.Button(
+            "Mostrar Eventos",
+            id="open-offcanvas",
+            color="transparent"
+        ),
     ]),
+    html.Hr(),
     dbc.Textarea(
         placeholder='notas',
         valid=False,
@@ -61,6 +53,22 @@ sidebar = dbc.Stack([
         id='submit'
     )
 ], style=styles.SIDEBAR_STYLE)
+
+offcanvas = dbc.Offcanvas([
+    dbc.ButtonGroup([
+                dbc.Button(
+                    "inicio",
+                    color="primary",
+                    id="inicio"
+                ),
+                *event_factory(Utils.EVENTS)[0],
+                dbc.Button(
+                    "final",
+                    color="primary",
+                    id="final"
+                )
+            ], id="events")
+], id="offcanvas", placement="bottom")
 
 line_layout = go.Layout(
     yaxis={
@@ -140,6 +148,7 @@ app_layout=html.Div([
         n_intervals=0,
         interval=1000
     ),
+    offcanvas,
     sidebar,
     html.Div([
         html.H3("sensor", id='sensor_name'),
