@@ -5,14 +5,14 @@ SIDEBAR_STYLE = {
     "bottom": 0,
     "flex": "0 1 20vw",
     "height":"100vh",
-    "padding": "2vw 2vw",
+    "padding": "1vw 1vw",
     "background-color":"var(--bs-gray-300)"
 }
 
 MAIN_STYLE = {
     "position":"relative",
     "flex": "0 1 80vw",
-    "padding": "2vw 2vw",
+    "padding": "1vw 1vw",
 }
 
 DATE_STYLE = {
