@@ -9,8 +9,6 @@ from plotly.subplots import make_subplots
 
 db = Database("test.db")
 session_list = db.list_sessions()
-test_events = db.get_events(20240722184224)
-test_session = db.get_session(20240722184224, test_events.iloc[0, 0], test_events.iloc[-1,0])
 
 sidebar = dbc.Stack([
     html.H1("EEG"),
