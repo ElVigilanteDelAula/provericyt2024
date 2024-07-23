@@ -155,3 +155,34 @@ def get_date(name:int)->datetime:
         re.findall(r"\d+", str(name))[0],
         r'%Y%m%d%H%M%S'
     ).strftime(r"%c")
+
+def stacked_plot_factory(uid, db, checked, fig:go.Figure):
+    events = db.get_events(uid)
+    session = db.get_session(uid, events.iloc[0, 0], events.iloc[-1,0])
+
+    for wave in checked:
+
+        for name, data in session.items():
+            if wave in name:
+                fig.add_trace(
+                    go.Scatter(
+                        x=session.index,
+                        y=data,
+                        name=name
+                    )
+                )
+        
+    for time, event in events.loc[:,["time", "event"]].values:
+        fig.add_vline(time, annotation_text=event)
+
+    fig.update_layout(
+        {
+            "xaxis":{
+                "rangeslider":{
+                    "visible":True
+                }
+            }
+        }
+    )
+    
+    return fig
