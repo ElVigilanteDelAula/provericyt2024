@@ -202,7 +202,7 @@ class Database:
         with closing(sqlite3.connect(self.db)) as conn:
             return pd.read_sql(
                 f"SELECT * FROM session_{uid} LIMIT {stop-start} OFFSET {start}", conn
-            )
+            ).set_index(np.arange(start, stop))
         
     def get_events(self, uid:int):
         with closing(sqlite3.connect(self.db)) as conn:
@@ -216,3 +216,9 @@ class Database:
             sessions["date"] = sessions["id"].apply(get_date)
 
             return sessions
+        
+    def get_notes(self, uid:int):
+        with closing(sqlite3.connect(self.db)) as conn:
+            return pd.read_sql(
+                f"SELECT notes FROM session WHERE id={uid}", conn
+            )
