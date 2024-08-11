@@ -22,6 +22,8 @@ class Utils:
 
         EVENTS = config["events"]
 
+        DATABASE_PATH = config["database"]
+
 
     def get_data(sensor: str) -> np.ndarray:
         '''
