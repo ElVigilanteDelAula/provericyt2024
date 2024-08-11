@@ -1,9 +1,11 @@
 from flask import  Flask, jsonify
 import numpy as np
+from itertools import cycle
 
 app = Flask(__name__)
 
-rng = np.random.default_rng()
+angles = np.linspace(0, np.pi*2, 120)
+angles_iter = cycle(angles)
 
 @app.route("/", methods=['GET'])
 def data():
@@ -11,7 +13,7 @@ def data():
     simula el funcionamiento del esp8266
     '''
     return jsonify(
-        {"data":rng.integers(0,100,(11)).tolist()}
+        {"data":np.full((11), np.abs(100*(np.sin(next(angles_iter))))).tolist()}
     )
 
 if __name__ =="__main__":

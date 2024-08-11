@@ -3,7 +3,7 @@ from src.py.utils.utils import bar_factory
 from src.py.utils.utils import heat_factory
 from src.py.utils.utils import Utils, event_factory
 from src.py.database.database import Database
-import src.py.components.styles as styles
+import src.py.live_gui.styles as styles
 import numpy as np
 
 from dash import Dash, dcc, html, Input, Output, callback, State
@@ -13,6 +13,7 @@ import plotly.graph_objects as go
 sidebar = dbc.Stack([
     html.H1("EEG"),
     html.H5("session", id='main_title'),
+    html.H5("time", id="time_text"),
     html.Hr(),
     dbc.Select(
         ["individual", "todos"],
@@ -24,6 +25,7 @@ sidebar = dbc.Stack([
         list(Utils.SENSORS.keys())[0],
         id='sensor_select'
     ),
+    html.Hr(),
     dbc.Accordion([
         dbc.AccordionItem([
             dbc.Checklist(
@@ -33,22 +35,13 @@ sidebar = dbc.Stack([
                 id='data_checklist'
             )
         ], title="señales"),
-        dbc.AccordionItem([
-            dbc.ButtonGroup([
-                dbc.Button(
-                    "inicio",
-                    color="primary",
-                    id="inicio"
-                ),
-                *event_factory(Utils.EVENTS)[0],
-                dbc.Button(
-                    "final",
-                    color="primary",
-                    id="final"
-                )
-            ],vertical=True, id="events")
-        ], title="eventos")
+        dbc.Button(
+            "Mostrar Eventos",
+            id="open-offcanvas",
+            color="transparent"
+        ),
     ]),
+    html.Hr(),
     dbc.Textarea(
         placeholder='notas',
         valid=False,
@@ -60,6 +53,22 @@ sidebar = dbc.Stack([
         id='submit'
     )
 ], style=styles.SIDEBAR_STYLE)
+
+offcanvas = dbc.Offcanvas([
+    dbc.ButtonGroup([
+                dbc.Button(
+                    "inicio",
+                    color="primary",
+                    id="inicio"
+                ),
+                *event_factory(Utils.EVENTS)[0],
+                dbc.Button(
+                    "final",
+                    color="primary",
+                    id="final"
+                )
+            ], id="events")
+], id="offcanvas", placement="bottom")
 
 line_layout = go.Layout(
     yaxis={
@@ -74,7 +83,11 @@ line_figure = go.Figure(
 
 
 line_graph = html.Div([
-    dcc.Graph(figure = line_figure, id='line_graph' )
+    dcc.Graph(
+        figure = line_figure, 
+        id='line_graph',
+        style=styles.GRAPH_STYLE
+    )
 ])
 
 bar_layout = go.Layout(
@@ -89,7 +102,11 @@ bar_figure = go.Figure(
 )
 
 bar_graph = html.Div([
-    dcc.Graph(figure=bar_figure,id='bar_graph')
+    dcc.Graph(
+        figure=bar_figure,
+        id='bar_graph',
+        style=styles.GRAPH_STYLE
+    )
 ])
 
 
@@ -103,21 +120,26 @@ heat_layout = {
 
 heat_figure = go.Figure(
     data=heat_factory(Utils.SENSORS),
-    layout=heat_layout
+    layout=heat_layout,
 )
 
 heat_graph = html.Div([
-    dcc.Graph(figure=heat_figure, id='heat_graph')
+    dcc.Graph(
+        figure=heat_figure, 
+        id='heat_graph',
+        responsive=True,
+        style=styles.GRAPH_STYLE
+    )
 ])
 
 graphs_ind = dbc.Tabs([
         dbc.Tab([line_graph], label="lines"),
         dbc.Tab([bar_graph], label="bars")
-    ], active_tab='lines')
+    ],active_tab="tab-1")
 
 graphs_all = dbc.Tabs([
         dbc.Tab([heat_graph], label="heatmap")
-    ],active_tab='heatmap')
+    ],active_tab="tab-0")
 
 app_layout=html.Div([
     dcc.Store(id='memory'),
@@ -126,6 +148,7 @@ app_layout=html.Div([
         n_intervals=0,
         interval=1000
     ),
+    offcanvas,
     sidebar,
     html.Div([
         html.H3("sensor", id='sensor_name'),
