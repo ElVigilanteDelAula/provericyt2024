@@ -1,0 +1,14 @@
+.accordion-item:last-of-type > .accordion-header .accordion-button.collapsed {
+    border-bottom-right-radius: var(--bs-accordion-inner-border-radius);
+    border-bottom-left-radius: var(--bs-accordion-inner-border-radius);
+    background-color:var(--bs-gray-300);
+  }
+
+.offcanvas-backdrop.show {
+    opacity: 0.5;
+}
+
+.offcanvas.show:not(.hiding), .offcanvas.showing {
+	transform: none;
+	background-color: var(--bs-gray-300);
+}

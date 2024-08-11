@@ -4,6 +4,8 @@ import requests
 import numpy as np
 import json
 from dash import Input, Output, State
+import re
+from datetime import datetime
 
 
 class Utils:
@@ -106,7 +108,7 @@ def heat_factory(sensors):
                 z=[[0]],
                 y=[],
                 x=[i],
-                colorscale="reds",
+                colorscale="sunsetdark",
                 zmax=100,
                 zmin=0,
                 showscale=False
@@ -117,7 +119,7 @@ def heat_factory(sensors):
                 z=[[0]],
                 y=[],
                 x=[i+1],
-                colorscale="greens",
+                colorscale="deep",
                 zmax=100,
                 zmin=0,
                 showscale=False
@@ -136,10 +138,51 @@ def event_factory(events:dict):
             dbc.Button(
                 key,
                 color="secondary",
-                id=key
+                id=key,
+                style=value
             )
         )
         tmp_inputs.append(
             Input(key, "n_clicks")
         )
     return tmp_components,tmp_inputs
+
+def get_uid(name:str)->str:
+    return re.findall(r"\d+", name)
+
+def get_date(name:int)->datetime:
+    return datetime.strptime(
+        re.findall(r"\d+", str(name))[0],
+        r'%Y%m%d%H%M%S'
+    ).strftime(r"%c")
+
+def stacked_plot_factory(uid, db, checked, fig:go.Figure):
+    events = db.get_events(uid)
+    session = db.get_session(uid, events.iloc[0, 0], events.iloc[-1,0])
+
+    for wave in checked:
+
+        for name, data in session.items():
+            if wave in name:
+                fig.add_trace(
+                    go.Scatter(
+                        x=session.index,
+                        y=data,
+                        name=name
+                    )
+                )
+        
+    for time, event in events.loc[:,["time", "event"]].values:
+        fig.add_vline(time, annotation_text=event)
+
+    fig.update_layout(
+        {
+            "xaxis":{
+                "rangeslider":{
+                    "visible":True
+                }
+            }
+        }
+    )
+    
+    return fig
