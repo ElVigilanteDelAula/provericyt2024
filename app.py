@@ -1,13 +1,14 @@
 import src.py.gui.components as components
 import src.py.gui.styles as styles
 from src.py.database.database import Database
+from src.py.utils.utils import Utils
 from src.py.utils.utils import stacked_plot_factory
 
 from dash import Dash, Input, Output, State, callback, no_update
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 
-db = Database("test.db")
+db = Database(Utils.DATABASE_PATH)
 
 dbc_css = ("https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates@V1.0.2/dbc.min.css")
 

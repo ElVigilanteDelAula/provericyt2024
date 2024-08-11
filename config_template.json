@@ -1,4 +1,5 @@
 {
+    "database_path":"test.db",
     "parameters":[
         "signal_strength",
         "attention",

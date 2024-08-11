@@ -10,7 +10,7 @@ import dash_bootstrap_components as dbc
 uid = datetime.now().strftime('%Y%m%d%H%M%S')
 header = Database.get_params_header(Utils.SENSORS.values(), Utils.SENSOR_PARAMS)
 
-db = Database("test.db")
+db = Database(Utils.DATABASE_PATH)
 
 if not db.session_table_exists():
     db.create_session_table()

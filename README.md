@@ -1,13 +1,24 @@
 # UwU
 
-##
-Librerias que se usan
+## Aplicaciones
+
++ `app.py` es un explorador de la base de datos
++ `live_app.py` es un visualizador de los datos en vivo
+    + Se tiene que duplicar el archivo `config_template.json` y renombrarlo a config, con los valores apropiados para cada caso
+
+Adicionalmente hay dos servidores de datos de prueba, que emulan la salida que esperamos del ESP
+
++ `test_server.py` es un servidor de prueba que da datos aleatorios entre 0 y 100
++ `test_server_sine.py` es un servidor de prueba que da una señal de seno entre 0 y 100
+
+## Librerías
+
+Utilizando Python 3.12.4
 
 + Flask
 + Plotly
 + Dash
 + Dash bootstrap components
-+ Dash bootstrap templates
 + Requests
 
 + Hay que renombrar config_template a config, con los valores que se usaràn
@@ -15,30 +26,14 @@ Librerias que se usan
 # Flujo
 
 + Se obtienen los datos del mindflex con el esp8266
-+ Se obtienen los datos del esp8266 con la librería ´Requests´
++ Se obtienen los datos del esp8266 con la librería Requests
 + Se guardan todos los datos obtenidos a una base de datos de SQLite
 + Se grafican parte de los datos obtenidos en el momento con Dash/plotly
 
-# Cosas que podria cambiar
-+ el diseño de las bases de datos es sus
-+ logs apropiados para errores
-+ declarar tipo de datos en la funcion que crea las tablas para las sesiones
-+ faltas de ortografía
-+ crear wrappers para las instrucciones de la base de datos, pero es que es mas legible con el sql ahi
-+ revisar callbacks del lado del cliente para que sea mas eficiente la grafica
-+ Tiene que haber una mejor manera de implementar los parametros del sensor para la base de datos
-+ puede que esa no sea la manera de usar un archivo de configuracion
-+ tiene que haber una mejor manera de checar si las tablas estan creadas
-+ sería bueno que cada cliente de esp8266 tuviera un ip estático
-+ Sería bueno usar un esp8266 para hostear a las demás, y a la computadora (como hotspot)
-+ Hay que crear otro archivo donde estén los componentes que van en `app_layout` dentro de `app.py`para que sea más fácil de leer
-
 ## Estructura
 
-En `src\py\database` se encuentra el codigo que se usa para guardar los datos en la base de datos.
++ En `src/py/database/database.py` se encuentra el codigo que se usa para guardar los datos en la base de datos.
 
-En `src\py\utils` se encuentran varias funciones que aun no tienen un lugar predeterminado.
++ En `src/py/utils/utils.py` se encuentran varias funciones que aun no tienen un lugar predeterminado.
 
-El archivo `test_server.py` en `src\py` tiene un servidor que se puede correr para simular los datos que devuelve la placa ESP.
-
-La aplicación principal se encuentra en el archivo `app.py`
++ En `src/py/gui` y `src/py/live_gui` se encuentran los archivos de dash para construir la aplicación correspondiente
