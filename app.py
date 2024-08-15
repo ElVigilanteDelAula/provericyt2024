@@ -1,7 +1,7 @@
 import src.py.gui.components as components
 import src.py.gui.styles as styles
 from src.py.database.database import Database
-from src.py.utils.utils import stacked_plot_factory
+from src.py.utils.utils import static_line_plot_factory, static_heat_plot_factory
 
 from dash import Dash, Input, Output, State, callback, no_update
 import dash_bootstrap_components as dbc
@@ -36,12 +36,19 @@ def toggle_offcanvas(clicks):
     Output("session_title", "children"),
     Output("session_notes", "children"),
     Output('line_graph', 'figure'),
+    Output("spec_graph", "figure"),
     Input("data_table", "selected_row_ids"),
     Input('data_checklist','value'),
+    Input('sensor_select','value'),
     prevent_initial_call=True
 )
-def set_session(selection, checked):
-    return f"session_{selection[0]}", str(db.get_notes(selection[0])["notes"][0]), stacked_plot_factory(selection[0],db, checked,go.Figure())
+def set_session(selection, checked, sensors):
+    return (
+        f"session_{selection[0]}",
+        str(db.get_notes(selection[0])["notes"][0]), 
+        static_line_plot_factory(selection[0],db, checked,sensors),
+        static_heat_plot_factory(selection[0],db, checked,sensors)
+    )
 
 if __name__ =="__main__":
     app.run(host="0.0.0.0", debug=True)
