@@ -3,7 +3,6 @@ import src.py.gui.styles as styles
 from src.py.database.database import Database
 from src.py.utils.utils import static_line_plot_factory, static_heat_plot_factory
 from src.py.utils.utils import Utils
-from src.py.utils.utils import stacked_plot_factory
 
 from dash import Dash, Input, Output, State, callback, no_update
 import dash_bootstrap_components as dbc
