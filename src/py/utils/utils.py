@@ -7,7 +7,6 @@ from dash import Input, Output, State
 import re
 from datetime import datetime
 
-
 class Utils:
 
     with open('config.json') as file:
@@ -19,6 +18,8 @@ class Utils:
         SENSOR_PARAMS_MAP = config['parameter_map']
 
         SENSORS = config['sensors']
+
+        SENSORS_MAP = config["sensors_map"]
 
         EVENTS = config["events"]
 
@@ -158,15 +159,25 @@ def get_date(name:int)->datetime:
         r'%Y%m%d%H%M%S'
     ).strftime(r"%c")
 
-def stacked_plot_factory(uid, db, checked, fig:go.Figure):
+def static_line_plot_factory(uid, db, checked, sensors):
+
+    line_figure = go.Figure()
+
+    index=[]
+    for sensor in sensors:
+        index += map(
+            lambda x:x+str(Utils.SENSORS_MAP[sensor]),
+            Utils.SENSOR_PARAMS
+        )
+
     events = db.get_events(uid)
-    session = db.get_session(uid, events.iloc[0, 0], events.iloc[-1,0])
+    session = db.get_session(uid, events.iloc[0, 0], events.iloc[-1,0]).loc[:,index]
 
     for wave in checked:
 
         for name, data in session.items():
             if wave in name:
-                fig.add_trace(
+                line_figure.add_trace(
                     go.Scatter(
                         x=session.index,
                         y=data,
@@ -175,9 +186,9 @@ def stacked_plot_factory(uid, db, checked, fig:go.Figure):
                 )
         
     for time, event in events.loc[:,["time", "event"]].values:
-        fig.add_vline(time, annotation_text=event)
+        line_figure.add_vline(time, annotation_text=event)
 
-    fig.update_layout(
+    line_figure.update_layout(
         {
             "xaxis":{
                 "rangeslider":{
@@ -187,4 +198,49 @@ def stacked_plot_factory(uid, db, checked, fig:go.Figure):
         }
     )
     
-    return fig
+    return line_figure
+
+def static_heat_plot_factory(uid, db, checked, sensors):
+
+    graph_figure = go.Figure()
+
+    index=[]
+    for sensor in sensors:
+        index += map(
+            lambda x:x+str(Utils.SENSORS_MAP[sensor]),
+            Utils.SENSOR_PARAMS
+        )
+
+    events = db.get_events(uid)
+    session = db.get_session(uid, events.iloc[0, 0], events.iloc[-1,0]).loc[:,index]
+    normalized=(session-session.min())/(session.max()-session.min())
+
+    # for wave in checked:
+
+    #     for name, data in session.items():
+    #         if wave in name:
+    #             ...
+
+    graph_figure.add_trace(
+        go.Heatmap(
+            x=session.index,
+            y=session.columns,
+            z=normalized.transpose(),
+            colorscale="deep"
+        )
+    )
+        
+    for time, event in events.loc[:,["time", "event"]].values:
+        graph_figure.add_vline(time, annotation_text=event)
+
+    graph_figure.update_layout(
+        {
+            "xaxis":{
+                "rangeslider":{
+                    "visible":True
+                }
+            }
+        }
+    )
+    
+    return graph_figure
