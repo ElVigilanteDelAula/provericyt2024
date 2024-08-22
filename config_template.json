@@ -28,15 +28,37 @@
         "high_gamma":10
     },
     "sensors":{
-        "sensor_a":"http://192.168.152.76:80/",
-        "sensor_b":"http://192.168.152.220:80/",
-        "sensor_c":"http://192.168.152.176:80/",
-        "sensor_d":"http://192.168.152.224:80/",
-        "sensor_e":"http://192.168.152.123:80/"
+        "occipital_i":"http://192.168.164.123:80",
+        "parietal_i":"http://192.168.164.224:80",
+        "frontal":"http://192.168.164.176:80",
+        "parietal_d":"http://192.168.164.76:80",
+        "occipital_d":"http://192.168.164.220:80"
+        
+    },
+    "sensors_map":{
+        "occipital_i":0,
+        "parietal_i":1,
+        "frontal":2,
+        "parietal_d":3,
+        "occipital_d":4
     },
     "events":{
-        "evento1":"tag1",
-        "evento2":"tag2"
+        "buena roja":{
+            "color":"red",
+            "borderColor":"green"
+        },
+        "buena negra":{
+            "color":"black",
+            "borderColor":"green"
+        },
+        "mala roja":{
+            "color":"red",
+            "borderColor":"yellow"
+        },
+        "mala negra":{
+            "color":"black",
+            "borderColor":"yellow"
+        }
     }
 
 }
