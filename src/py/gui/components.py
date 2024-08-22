@@ -43,7 +43,7 @@ sidebar = dbc.Stack([
             'backgroundColor': 'var(--bs-gray-400)',
             'color': 'var(--bs-btn-color)'
         },
-        page_size=10,
+        page_size=6,
         style_as_list_view=True,
         id="data_table"
     ),
@@ -52,12 +52,29 @@ sidebar = dbc.Stack([
 
 offcanvas = dbc.Offcanvas([
     dbc.Checklist(
+        list(Utils.SENSORS.keys()),
+        list(Utils.SENSORS.keys()),
+        id='sensor_select',
+        switch=True
+    ),
+    html.Hr(),
+    dbc.Checklist(
                 Utils.SENSOR_PARAMS,
                 ['signal_strength', 'attention', 'meditation'],
                 switch=True,
                 id='data_checklist'
             )
 ], id="offcanvas")
+
+spec_figure = go.Figure()
+
+spec_graph = html.Div([
+    dcc.Graph(
+        figure=spec_figure,
+        id="spec_graph",
+        style=styles.GRAPH_STYLE
+    )
+])
 
 line_figure = go.Figure()
 
@@ -70,7 +87,8 @@ line_graph = html.Div([
 ])
 
 graphs = dbc.Tabs([
-        dbc.Tab([line_graph], label="lines")
+        dbc.Tab([line_graph], label="lines"),
+        dbc.Tab([spec_graph], label="spectrogram")
     ],active_tab="tab-0")
 
 main_view = html.Div([

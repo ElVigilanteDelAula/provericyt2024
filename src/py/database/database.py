@@ -198,11 +198,11 @@ class Database:
                 conn.commit()
         conn.close()
 
-    def get_session(self, uid:int, start:int, stop:int):
+    def get_session(self, uid:int, start:int, stop:int, offset:int = 2):
         with closing(sqlite3.connect(self.db)) as conn:
             return pd.read_sql(
                 f"SELECT * FROM session_{uid} LIMIT {stop-start} OFFSET {start}", conn
-            ).set_index(np.arange(start, stop))
+            ).set_index(np.arange(start-offset, stop-offset))
         
     def get_events(self, uid:int):
         with closing(sqlite3.connect(self.db)) as conn:
