@@ -10,9 +10,12 @@ from dash import Dash, dcc, html, Input, Output, callback, State
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 
+new_session = dbc.Button("nueva sesión", id="new_session")
+
+
 sidebar = dbc.Stack([
     html.H1("EEG"),
-    html.H5("session", id='main_title'),
+    new_session,
     html.H5("time", id="time_text"),
     html.Hr(),
     dbc.Select(
@@ -40,7 +43,7 @@ sidebar = dbc.Stack([
             id="open-offcanvas",
             color="transparent"
         ),
-    ]),
+    ], start_collapsed=True),
     html.Hr(),
     dbc.Textarea(
         placeholder='notas',

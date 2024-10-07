@@ -7,19 +7,10 @@ from datetime import datetime
 from dash import Dash, Input, Output, callback, State, no_update, ctx
 import dash_bootstrap_components as dbc
 
-uid = datetime.now().strftime('%Y%m%d%H%M%S')
 header = Database.get_params_header(Utils.SENSORS.values(), Utils.SENSOR_PARAMS)
 
 db = Database(Utils.DATABASE_PATH)
 
-if not db.session_table_exists():
-    db.create_session_table()
-
-if not db.session_exists(uid):
-    db.create_session(uid, header)
-
-if not db.events_exists(uid):
-    db.create_events(uid)
 custom_css = r'''
 .accordion-item:last-of-type > .accordion-header .accordion-button.collapsed {
   border-bottom-right-radius: var(--bs-accordion-inner-border-radius);
@@ -45,15 +36,34 @@ def select_quantity(qty, sensor):
         return [components.graphs_ind], sensor
     elif qty == 'todos':
         return [components.graphs_all], "Todos los sensores"
+
+@callback(
+    Output('new_session', "children"),
+    Output("memory", "data"),
+    Input('new_session', "n_clicks"),
+    prevent_initial_call=True
+)
+def new_session(n):
+
+    uid = datetime.now().strftime('%Y%m%d%H%M%S')
+
+    if not db.session_table_exists():
+        db.create_session_table()
+    if not db.session_exists(uid):
+        db.create_session(uid, header)
+    if not db.events_exists(uid):
+        db.create_events(uid)
+
+    db.record_session_info(uid, Utils.SENSORS.keys(),"")
     
+    return f"session_{uid}", {"uid":uid}
+
 @callback(
     Output('main_title', "children"),
-    Output("memory", "data"),
     Input('all', "children")
 )
 def on_startup(children):
-    db.record_session_info(uid, Utils.SENSORS.keys(),"")
-    return f"session_{uid}", {"uid":uid}
+    return no_update
 
 @callback(
     Output("memory", "data",  allow_duplicate=True),
