@@ -10,12 +10,14 @@ from dash import Dash, dcc, html, Input, Output, callback, State
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 
-new_session = dbc.Button("nueva sesión", id="new_session")
-
+new_session = dbc.Button("nueva sesión", id="new_session", color="transparent")
+record = dbc.Button("detener", id="reset", color="success")
+record_button_cmap = {0:"success", 1:"fail"}
 
 sidebar = dbc.Stack([
     html.H1("EEG"),
     new_session,
+    record,
     html.H5("time", id="time_text"),
     html.Hr(),
     dbc.Select(
@@ -149,7 +151,7 @@ app_layout=html.Div([
     dcc.Interval(
         id="timer",
         n_intervals=0,
-        interval=1000
+        interval=1000,
     ),
     offcanvas,
     sidebar,

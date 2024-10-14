@@ -40,10 +40,12 @@ def select_quantity(qty, sensor):
 @callback(
     Output('new_session', "children"),
     Output("memory", "data"),
+    Output('timer', "n_intervals"),
     Input('new_session', "n_clicks"),
     prevent_initial_call=True
 )
 def new_session(n):
+
 
     uid = datetime.now().strftime('%Y%m%d%H%M%S')
 
@@ -56,7 +58,7 @@ def new_session(n):
 
     db.record_session_info(uid, Utils.SENSORS.keys(),"")
     
-    return f"session_{uid}", {"uid":uid}
+    return f"session_{uid}", {"uid":uid}, 0
 
 @callback(
     Output('main_title', "children"),
@@ -68,28 +70,39 @@ def on_startup(children):
 @callback(
     Output("memory", "data",  allow_duplicate=True),
     Output("time_text", "children"),
+    Output('reset', "color"),
+    State('reset', "color"),
     State("memory", "data"),
     Input('timer', "n_intervals"),
+    Input("reset", "n_clicks"),
     prevent_initial_call=True
 )
-def store_data(data, intervals):
+def store_data(color, data, intervals, n):
 
-    sensor_live = [Utils.get_data(sensor) for sensor in Utils.SENSORS.values()]
+    if ctx.triggered_id == "timer":
 
-    db.record_data(data['uid'],header,sensor_live)
+        sensor_live = [Utils.get_data(sensor) for sensor in Utils.SENSORS.values()]
 
-    tmp = {
-        "uid":data['uid'],
-    }
+        
+        db.record_data(data['uid'],header,sensor_live)
 
-    for sensor, readings in zip(Utils.SENSORS.keys(),sensor_live):
-        tmp.update({sensor:{}})
-        for key, value in zip(Utils.SENSOR_PARAMS_MAP.keys(), readings):
-            tmp[sensor].update(
-                {key:value}
-            )
+        tmp = {
+            "uid":data['uid'],
+        }
 
-    return tmp, intervals
+        for sensor, readings in zip(Utils.SENSORS.keys(),sensor_live):
+            tmp.update({sensor:{}})
+            for key, value in zip(Utils.SENSOR_PARAMS_MAP.keys(), readings):
+                tmp[sensor].update(
+                    {key:value}
+                )
+
+
+        return tmp, intervals, no_update
+    
+    if ctx.triggered_id == "reset":
+        print(color)
+        return no_update, no_update, no_update
 
 @callback(
     Output("line_graph", "extendData"),
@@ -178,7 +191,7 @@ def record_event(data, time, *args):
     Input("submit", "n_clicks"),
     prevent_initial_call=True
 )
-def record_event(notas,data, n_clicks):
+def update_notes(notas,data, n_clicks):
     db.update_notes(data["uid"], notas)
     return "success"
 
