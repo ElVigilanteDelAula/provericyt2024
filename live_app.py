@@ -2,6 +2,7 @@ from src.py.utils.utils import Utils, event_factory
 from src.py.database.database import Database
 import numpy as np
 import src.py.live_gui.components as components
+import src.py.brain_viz.live_brain_callbacks  # Import brain callbacks
 from datetime import datetime
 
 from dash import Dash, Input, Output, callback, State, no_update, ctx

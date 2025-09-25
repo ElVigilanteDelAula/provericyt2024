@@ -4,6 +4,7 @@ from src.py.utils.utils import heat_factory
 from src.py.utils.utils import Utils, event_factory
 from src.py.database.database import Database
 import src.py.live_gui.styles as styles
+from src.py.brain_viz.brain_components import create_brain_component
 import numpy as np
 
 from dash import Dash, dcc, html, Input, Output, callback, State
@@ -132,13 +133,18 @@ heat_graph = html.Div([
     )
 ])
 
+# Create brain visualization component
+brain_graph = create_brain_component()
+
 graphs_ind = dbc.Tabs([
         dbc.Tab([line_graph], label="lines"),
-        dbc.Tab([bar_graph], label="bars")
+        dbc.Tab([bar_graph], label="bars"),
+        dbc.Tab([brain_graph], label="cerebro 3D")
     ],active_tab="tab-1")
 
 graphs_all = dbc.Tabs([
-        dbc.Tab([heat_graph], label="heatmap")
+        dbc.Tab([heat_graph], label="heatmap"),
+        dbc.Tab([brain_graph], label="cerebro 3D")
     ],active_tab="tab-0")
 
 app_layout=html.Div([
