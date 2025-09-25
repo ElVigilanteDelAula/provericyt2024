@@ -157,12 +157,12 @@ class BrainVisualizer:
         - Area coverage based on signal_strength (stronger signal = larger area)
         - Radial fade effect (intensity decreases from center outward)
         
-        Sensor mapping:
-        - Sensor A: Centro del cerebro
-        - Sensor B: Lateral superior izquierdo 
-        - Sensor C: Lateral superior derecho
-        - Sensor D: Lateral inferior izquierdo
-        - Sensor E: Lateral inferior derecho
+        Sensor mapping based on EEG standard positions:
+        - Sensor A: P3 - Left Parietal Lobe
+        - Sensor B: F3 - Left Frontal Cortex 
+        - Sensor C: FPz - Midline Forehead (Ground)
+        - Sensor D: F4 - Right Frontal Cortex
+        - Sensor E: P2 - Right Parietal Lobe (between Pz and T6)
         
         Parameters:
         - all_sensors_data: Dictionary with all sensor data
@@ -211,37 +211,12 @@ class BrainVisualizer:
             # Signal strength controls area coverage (0-100 → 0.1-1.0)
             coverage_factor = (signal_strength / 100.0) * 0.9 + 0.1  # Min 10%, Max 100%
             
-            # Map sensors to brain regions with heatmap effect
-            if sensor_name == 'sensor_a':  # Centro del cerebro
-                # Define center points for both hemispheres
-                center_r = np.array([(x_min_r + x_max_r) / 2, (y_min_r + y_max_r) / 2, (z_min_r + z_max_r) / 2])
-                center_l = np.array([(x_min_l + x_max_l) / 2, (y_min_l + y_max_l) / 2, (z_min_l + z_max_l) / 2])
-                
-                # Calculate distances from center for right hemisphere
-                distances_r = np.sqrt(np.sum((coords_right - center_r)**2, axis=1))
-                max_distance_r = brain_size_r * 0.3 * coverage_factor  # Coverage area
-                
-                # Create radial fade effect for right hemisphere
-                fade_mask_r = distances_r <= max_distance_r
-                fade_intensity_r = np.zeros_like(distances_r)
-                fade_intensity_r[fade_mask_r] = (1 - distances_r[fade_mask_r] / max_distance_r) * attention_norm
-                intensity_right += fade_intensity_r
-                
-                # Calculate distances from center for left hemisphere
-                distances_l = np.sqrt(np.sum((coords_left - center_l)**2, axis=1))
-                max_distance_l = brain_size_l * 0.3 * coverage_factor  # Coverage area
-                
-                # Create radial fade effect for left hemisphere
-                fade_mask_l = distances_l <= max_distance_l
-                fade_intensity_l = np.zeros_like(distances_l)
-                fade_intensity_l[fade_mask_l] = (1 - distances_l[fade_mask_l] / max_distance_l) * meditation_norm
-                intensity_left += fade_intensity_l
-                
-            elif sensor_name == 'sensor_b':  # Lateral superior izquierdo
-                # Define center point for upper left region
-                center_l = np.array([x_min_l + (x_max_l - x_min_l) * 0.2, 
-                                   y_min_l + (y_max_l - y_min_l) * 0.3, 
-                                   z_min_l + (z_max_l - z_min_l) * 0.8])
+            # Map sensors to brain regions with heatmap effect based on EEG standard positions
+            if sensor_name == 'sensor_a':  # P3 - Left Parietal Lobe
+                # Define center point for P3 position (left parietal - posterior region)
+                center_l = np.array([x_min_l + (x_max_l - x_min_l) * 0.3, 
+                                   y_max_l - (y_max_l - y_min_l) * 0.2,  # Posterior (back)
+                                   z_min_l + (z_max_l - z_min_l) * 0.6])
                 
                 distances_l = np.sqrt(np.sum((coords_left - center_l)**2, axis=1))
                 max_distance_l = brain_size_l * 0.25 * coverage_factor
@@ -251,39 +226,66 @@ class BrainVisualizer:
                 fade_intensity_l[fade_mask_l] = (1 - distances_l[fade_mask_l] / max_distance_l) * attention_norm
                 intensity_left += fade_intensity_l
                 
-            elif sensor_name == 'sensor_c':  # Lateral superior derecho
-                # Define center point for upper right region
-                center_r = np.array([x_max_r - (x_max_r - x_min_r) * 0.2, 
-                                   y_min_r + (y_max_r - y_min_r) * 0.3, 
-                                   z_min_r + (z_max_r - z_min_r) * 0.8])
-                
-                distances_r = np.sqrt(np.sum((coords_right - center_r)**2, axis=1))
-                max_distance_r = brain_size_r * 0.25 * coverage_factor
-                
-                fade_mask_r = distances_r <= max_distance_r
-                fade_intensity_r = np.zeros_like(distances_r)
-                fade_intensity_r[fade_mask_r] = (1 - distances_r[fade_mask_r] / max_distance_r) * attention_norm
-                intensity_right += fade_intensity_r
-                
-            elif sensor_name == 'sensor_d':  # Lateral inferior izquierdo
-                # Define center point for lower left region
-                center_l = np.array([x_min_l + (x_max_l - x_min_l) * 0.2, 
-                                   y_min_l + (y_max_l - y_min_l) * 0.7, 
-                                   z_min_l + (z_max_l - z_min_l) * 0.2])
+            elif sensor_name == 'sensor_b':  # F3 - Left Frontal Cortex
+                # Define center point for F3 position (left frontal - anterior region)
+                center_l = np.array([x_min_l + (x_max_l - x_min_l) * 0.3, 
+                                   y_min_l + (y_max_l - y_min_l) * 0.2,  # Anterior (front)
+                                   z_min_l + (z_max_l - z_min_l) * 0.7])
                 
                 distances_l = np.sqrt(np.sum((coords_left - center_l)**2, axis=1))
                 max_distance_l = brain_size_l * 0.25 * coverage_factor
                 
                 fade_mask_l = distances_l <= max_distance_l
                 fade_intensity_l = np.zeros_like(distances_l)
+                fade_intensity_l[fade_mask_l] = (1 - distances_l[fade_mask_l] / max_distance_l) * attention_norm
+                intensity_left += fade_intensity_l
+                
+            elif sensor_name == 'sensor_c':  # FPz - Midline Forehead (Ground)
+                # Define center points for FPz position (midline frontal - very front)
+                center_r = np.array([(x_min_r + x_max_r) / 2, 
+                                   y_min_r + (y_max_r - y_min_r) * 0.1,  # Very anterior (front)
+                                   z_max_r])  # Top of the brain
+                center_l = np.array([(x_min_l + x_max_l) / 2, 
+                                   y_min_l + (y_max_l - y_min_l) * 0.1,  # Very anterior (front)
+                                   z_max_l])  # Top of the brain
+                
+                # Apply to right hemisphere
+                distances_r = np.sqrt(np.sum((coords_right - center_r)**2, axis=1))
+                max_distance_r = brain_size_r * 0.2 * coverage_factor
+                
+                fade_mask_r = distances_r <= max_distance_r
+                fade_intensity_r = np.zeros_like(distances_r)
+                fade_intensity_r[fade_mask_r] = (1 - distances_r[fade_mask_r] / max_distance_r) * attention_norm
+                intensity_right += fade_intensity_r
+                
+                # Apply to left hemisphere
+                distances_l = np.sqrt(np.sum((coords_left - center_l)**2, axis=1))
+                max_distance_l = brain_size_l * 0.2 * coverage_factor
+                
+                fade_mask_l = distances_l <= max_distance_l
+                fade_intensity_l = np.zeros_like(distances_l)
                 fade_intensity_l[fade_mask_l] = (1 - distances_l[fade_mask_l] / max_distance_l) * meditation_norm
                 intensity_left += fade_intensity_l
                 
-            elif sensor_name == 'sensor_e':  # Lateral inferior derecho
-                # Define center point for lower right region
-                center_r = np.array([x_max_r - (x_max_r - x_min_r) * 0.2, 
-                                   y_min_r + (y_max_r - y_min_r) * 0.7, 
-                                   z_min_r + (z_max_r - z_min_r) * 0.2])
+            elif sensor_name == 'sensor_d':  # F4 - Right Frontal Cortex
+                # Define center point for F4 position (right frontal - anterior region)
+                center_r = np.array([x_max_r - (x_max_r - x_min_r) * 0.3, 
+                                   y_min_r + (y_max_r - y_min_r) * 0.2,  # Anterior (front)
+                                   z_min_r + (z_max_r - z_min_r) * 0.7])
+                
+                distances_r = np.sqrt(np.sum((coords_right - center_r)**2, axis=1))
+                max_distance_r = brain_size_r * 0.25 * coverage_factor
+                
+                fade_mask_r = distances_r <= max_distance_r
+                fade_intensity_r = np.zeros_like(distances_r)
+                fade_intensity_r[fade_mask_r] = (1 - distances_r[fade_mask_r] / max_distance_r) * meditation_norm
+                intensity_right += fade_intensity_r
+                
+            elif sensor_name == 'sensor_e':  # P2 - Right Parietal Lobe (between Pz and T6)
+                # Define center point for P2 position (right parietal - posterior region)
+                center_r = np.array([x_max_r - (x_max_r - x_min_r) * 0.3, 
+                                   y_max_r - (y_max_r - y_min_r) * 0.2,  # Posterior (back)
+                                   z_min_r + (z_max_r - z_min_r) * 0.6])
                 
                 distances_r = np.sqrt(np.sum((coords_right - center_r)**2, axis=1))
                 max_distance_r = brain_size_r * 0.25 * coverage_factor
