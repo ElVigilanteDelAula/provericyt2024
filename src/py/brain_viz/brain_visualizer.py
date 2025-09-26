@@ -215,8 +215,8 @@ class BrainVisualizer:
             if sensor_name == 'sensor_a':  # P3 - Left Parietal Lobe
                 # Define center point for P3 position (left parietal - posterior region)
                 center_l = np.array([x_min_l + (x_max_l - x_min_l) * 0.3, 
-                                   y_max_l - (y_max_l - y_min_l) * 0.2,  # Posterior (back)
-                                   z_min_l + (z_max_l - z_min_l) * 0.6])
+                                   y_min_l + (y_max_l - y_min_l) * 0.2,  # Posterior (back)
+                                   z_min_l + (z_max_l - z_min_l) * 0.7])
                 
                 distances_l = np.sqrt(np.sum((coords_left - center_l)**2, axis=1))
                 max_distance_l = brain_size_l * 0.25 * coverage_factor
@@ -229,8 +229,8 @@ class BrainVisualizer:
             elif sensor_name == 'sensor_b':  # F3 - Left Frontal Cortex
                 # Define center point for F3 position (left frontal - anterior region)
                 center_l = np.array([x_min_l + (x_max_l - x_min_l) * 0.3, 
-                                   y_min_l + (y_max_l - y_min_l) * 0.2,  # Anterior (front)
-                                   z_min_l + (z_max_l - z_min_l) * 0.7])
+                                   y_max_l - (y_max_l - y_min_l) * 0.2,  # Anterior (front)
+                                   z_min_l + (z_max_l - z_min_l) * 0.6])
                 
                 distances_l = np.sqrt(np.sum((coords_left - center_l)**2, axis=1))
                 max_distance_l = brain_size_l * 0.25 * coverage_factor
@@ -270,8 +270,8 @@ class BrainVisualizer:
             elif sensor_name == 'sensor_d':  # F4 - Right Frontal Cortex
                 # Define center point for F4 position (right frontal - anterior region)
                 center_r = np.array([x_max_r - (x_max_r - x_min_r) * 0.3, 
-                                   y_min_r + (y_max_r - y_min_r) * 0.2,  # Anterior (front)
-                                   z_min_r + (z_max_r - z_min_r) * 0.7])
+                                   y_max_r - (y_max_r - y_min_r) * 0.2,  # Anterior (front)
+                                   z_min_r + (z_max_r - z_min_r) * 0.6])
                 
                 distances_r = np.sqrt(np.sum((coords_right - center_r)**2, axis=1))
                 max_distance_r = brain_size_r * 0.25 * coverage_factor
@@ -284,8 +284,8 @@ class BrainVisualizer:
             elif sensor_name == 'sensor_e':  # P2 - Right Parietal Lobe (between Pz and T6)
                 # Define center point for P2 position (right parietal - posterior region)
                 center_r = np.array([x_max_r - (x_max_r - x_min_r) * 0.3, 
-                                   y_max_r - (y_max_r - y_min_r) * 0.2,  # Posterior (back)
-                                   z_min_r + (z_max_r - z_min_r) * 0.6])
+                                   y_min_r + (y_max_r - y_min_r) * 0.2,  # Posterior (back)
+                                   z_min_r + (z_max_r - z_min_r) * 0.7])
                 
                 distances_r = np.sqrt(np.sum((coords_right - center_r)**2, axis=1))
                 max_distance_r = brain_size_r * 0.25 * coverage_factor
