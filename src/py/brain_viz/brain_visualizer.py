@@ -263,7 +263,7 @@ class BrainVisualizer:
                 
                 fade_mask_l = distances_l <= max_distance_l
                 fade_intensity_l = np.zeros_like(distances_l)
-                fade_intensity_l[fade_mask_l] = (1 - distances_l[fade_mask_l] / max_distance_l) * meditation_norm
+                fade_intensity_l[fade_mask_l] = (1 - distances_l[fade_mask_l] / max_distance_l) * attention_norm
                 intensity_left += fade_intensity_l
                 
             elif sensor_name == 'sensor_d':  # F4 - Right Frontal Cortex
