@@ -1,6 +1,5 @@
 """
-Brain 3D visualization component using nilearn and plotly.
-Adapted from test3.py for live EEG data visualization.
+Componente de visualización 3D del cerebro usando nilearn y plotly.
 """
 
 import numpy as np
@@ -8,11 +7,11 @@ import plotly.graph_objects as go
 
 class BrainVisualizer:
     """
-    3D Brain visualizer using nilearn surface data and plotly for rendering.
+    Visualizador 3D del cerebro usando datos de superficie de nilearn y plotly para el renderizado.
     """
     
     def __init__(self):
-        """Initialize the brain visualizer with lazy loading."""
+        """Inicializar el visualizador del cerebro con carga diferida."""
         self.fsaverage = None
         self.mesh_right = None
         self.mesh_left = None
@@ -22,24 +21,24 @@ class BrainVisualizer:
         self._initialized = False
         
     def _lazy_init(self):
-        """Lazy initialization of nilearn components."""
+        """Inicialización diferida de los componentes de nilearn."""
         if self._initialized:
             return True
             
         try:
             from nilearn import datasets, surface
             
-            # Load fsaverage surface data
+            # Cargar datos de superficie fsaverage
             self.fsaverage = datasets.fetch_surf_fsaverage()
             
-            # Load sample motor activation data for reference
+            # Cargar datos de muestra de activación motora para referencia
             motor_img = datasets.load_sample_motor_activation_image()
             
-            # Load meshes for both hemispheres
+            # Cargar mallas para ambos hemisferios
             self.mesh_right = surface.load_surf_mesh(self.fsaverage.pial_right)
             self.mesh_left = surface.load_surf_mesh(self.fsaverage.pial_left)
             
-            # Get reference activation maps
+            # Obtener mapas de activación de referencia
             self.reference_map_right = surface.vol_to_surf(motor_img, self.mesh_right)
             self.reference_map_left = surface.vol_to_surf(motor_img, self.mesh_left)
             
@@ -47,34 +46,33 @@ class BrainVisualizer:
             return True
             
         except Exception as e:
-            print(f"Warning: Could not initialize nilearn components: {e}")
+            print(f"Advertencia: No se pudieron inicializar los componentes de nilearn: {e}")
             return False
         
     def create_brain_figure(self, intensity_right=None, intensity_left=None, title_suffix=""):
         """
-        Create a 3D brain figure with optional custom intensity maps.
+        Crear una figura 3D del cerebro con mapas de intensidad personalizados opcionales.
         
-        Parameters:
-        - intensity_right: Custom intensity values for right hemisphere
-        - intensity_left: Custom intensity values for left hemisphere
-        - title_suffix: Additional text for the title
+        Parámetros:
+        - intensity_right: Valores de intensidad personalizados para el hemisferio derecho
+        - intensity_left: Valores de intensidad personalizados para el hemisferio izquierdo
         
-        Returns:
-        - plotly.graph_objects.Figure: 3D brain visualization
+        Retorna:
+        - plotly.graph_objects.Figure: Visualización 3D del cerebro
         """
         
-        # Try to initialize nilearn components
+        # Intentar inicializar componentes de nilearn
         if not self._lazy_init():
             return self._create_fallback_figure()
         
-        # Use provided intensity or fall back to reference
+        # Usar intensidad proporcionada o usar referencia por defecto
         map_right = intensity_right if intensity_right is not None else self.reference_map_right
         map_left = intensity_left if intensity_left is not None else self.reference_map_left
         
-        # Create new figure
+        # Crear nueva figura
         fig = go.Figure()
         
-        # Add right hemisphere with colorbar
+        # Agregar hemisferio derecho con barra de color
         fig.add_trace(go.Mesh3d(
             x=self.mesh_right.coordinates[:, 0],
             y=self.mesh_right.coordinates[:, 1],
@@ -83,9 +81,9 @@ class BrainVisualizer:
             j=self.mesh_right.faces[:, 1],
             k=self.mesh_right.faces[:, 2],
             intensity=map_right,
-            colorscale="RdBu_r",  # Blue = negative, Red = positive
-            cmin=-6,              # Min scale
-            cmax=6,               # Max scale
+            colorscale="RdBu_r",  # Azul = negativo, Rojo = positivo
+            cmin=-6,              # Escala mínima
+            cmax=6,               # Escala máxima
             colorbar=dict(
                 title=dict(text="Activación"),
                 thickness=15,
@@ -96,7 +94,7 @@ class BrainVisualizer:
             opacity=1
         ))
         
-        # Add left hemisphere without colorbar
+        # Agregar hemisferio izquierdo sin barra de color
         fig.add_trace(go.Mesh3d(
             x=self.mesh_left.coordinates[:, 0],
             y=self.mesh_left.coordinates[:, 1],
@@ -108,12 +106,12 @@ class BrainVisualizer:
             colorscale="RdBu_r",
             cmin=-6,
             cmax=6,
-            showscale=False,  # Avoid second colorbar
+            showscale=False,  # Evitar segunda barra de color
             name="Left Hemisphere",
             opacity=1
         ))
         
-         # Update layout with dynamic title
+         # Actualizar diseño con título dinámico
         fig.update_layout(
             scene=dict(
                xaxis=dict(visible=False),
@@ -129,7 +127,7 @@ class BrainVisualizer:
         return fig
         
     def _create_fallback_figure(self):
-        """Create a fallback figure when nilearn is not available."""
+        """Crear una figura de respaldo cuando nilearn no está disponible."""
         fig = go.Figure()
         
         fig.add_annotation(
@@ -150,36 +148,36 @@ class BrainVisualizer:
     
     def update_brain_intensity(self, all_sensors_data):
         """
-        Update brain intensity based on EEG data from all sensors with heatmap effect.
-        Maps each sensor to specific brain regions with:
-        - Area coverage based on signal_strength (stronger signal = larger area)
-        - Radial fade effect (intensity decreases from center outward)
+        Actualizar la intensidad del cerebro basada en datos EEG de todos los sensores con efecto de mapa de calor.
+        Mapea cada sensor a regiones específicas del cerebro con:
+        - Cobertura de área basada en signal_strength (señal más fuerte = área más grande)
+        - Efecto de desvanecimiento radial (intensidad disminuye desde el centro hacia afuera)
         
-        Sensor mapping based on EEG standard positions:
-        - Sensor A: P3 - Left Parietal Lobe
-        - Sensor B: F3 - Left Frontal Cortex 
-        - Sensor C: FPz - Midline Forehead (Ground)
-        - Sensor D: F4 - Right Frontal Cortex
-        - Sensor E: P2 - Right Parietal Lobe (between Pz and T6)
+        Mapeo de sensores basado en posiciones estándar de EEG:
+        - Sensor A: P3 - Lóbulo Parietal Izquierdo
+        - Sensor B: F3 - Corteza Frontal Izquierda 
+        - Sensor C: FPz - Línea Media de la Frente
+        - Sensor D: F4 - Corteza Frontal Derecha
+        - Sensor E: P2 - Lóbulo Parietal Derecho
         
-        Parameters:
-        - all_sensors_data: Dictionary with all sensor data
+        Parámetros:
+        - all_sensors_data: Diccionario con datos de todos los sensores
         
-        Returns:
-        - tuple: (intensity_right, intensity_left) arrays
+        Retorna:
+        - tuple: (intensity_right, intensity_left) arreglos
         """
         if not self._initialized:
             return None, None
             
-        # Initialize intensity maps with zeros
+        # Inicializar mapas de intensidad con ceros
         intensity_right = np.zeros_like(self.reference_map_right)
         intensity_left = np.zeros_like(self.reference_map_left)
         
-        # Get brain mesh coordinates for region mapping
+        # Obtener coordenadas de malla del cerebro para mapeo de regiones
         coords_right = self.mesh_right.coordinates
         coords_left = self.mesh_left.coordinates
         
-        # Calculate brain bounds for region mapping
+        # Calcular límites del cerebro para mapeo de regiones
         x_min_r, x_max_r = coords_right[:, 0].min(), coords_right[:, 0].max()
         y_min_r, y_max_r = coords_right[:, 1].min(), coords_right[:, 1].max()
         z_min_r, z_max_r = coords_right[:, 2].min(), coords_right[:, 2].max()
@@ -188,32 +186,32 @@ class BrainVisualizer:
         y_min_l, y_max_l = coords_left[:, 1].min(), coords_left[:, 1].max()
         z_min_l, z_max_l = coords_left[:, 2].min(), coords_left[:, 2].max()
         
-        # Brain dimensions for distance calculations
+        # Dimensiones del cerebro para cálculos de distancia
         brain_size_r = np.sqrt((x_max_r - x_min_r)**2 + (y_max_r - y_min_r)**2 + (z_max_r - z_min_r)**2)
         brain_size_l = np.sqrt((x_max_l - x_min_l)**2 + (y_max_l - y_min_l)**2 + (z_max_l - z_min_l)**2)
         
-        # Process each sensor
+        # Procesar cada sensor
         for sensor_name, sensor_data in all_sensors_data.items():
-            if sensor_name == 'uid':  # Skip uid field
+            if sensor_name == 'uid':  # Omitir campo uid
                 continue
                 
-            # Extract sensor values
+            # Extraer valores del sensor
             attention = sensor_data.get('attention', 50)
             meditation = sensor_data.get('meditation', 50)
             signal_strength = sensor_data.get('signal_strength', 50)
             
-            # Normalize attention and meditation to -6 to 6 range
+            # Normalizar atención y meditación al rango -6 a 6
             attention_norm = (attention - 50) * 6 / 50
             meditation_norm = (meditation - 50) * 6 / 50
             
-            # Signal strength controls area coverage (0-100 → 0.1-1.0)
-            coverage_factor = (signal_strength / 100.0) * 0.9 + 0.1  # Min 10%, Max 100%
+            # La fuerza de la señal controla la cobertura del área (0-100 → 0.1-1.0)
+            coverage_factor = (signal_strength / 100.0) * 0.9 + 0.1  # Mín 10%, Máx 100%
             
-            # Map sensors to brain regions with heatmap effect based on EEG standard positions
-            if sensor_name == 'sensor_a':  # P3 - Left Parietal Lobe
-                # Define center point for P3 position (left parietal - posterior region)
+            # Mapear sensores a regiones del cerebro con efecto de mapa de calor basado en posiciones estándar de EEG
+            if sensor_name == 'sensor_a':  # P3 - Lóbulo Parietal Izquierdo
+                # Definir punto central para posición P3 (parietal izquierdo - región posterior)
                 center_l = np.array([x_min_l + (x_max_l - x_min_l) * 0.3, 
-                                   y_min_l + (y_max_l - y_min_l) * 0.2,  # Posterior (back)
+                                   y_min_l + (y_max_l - y_min_l) * 0.2,  # Posterior (atrás)
                                    z_min_l + (z_max_l - z_min_l) * 0.7])
                 
                 distances_l = np.sqrt(np.sum((coords_left - center_l)**2, axis=1))
@@ -224,10 +222,10 @@ class BrainVisualizer:
                 fade_intensity_l[fade_mask_l] = (1 - distances_l[fade_mask_l] / max_distance_l) * attention_norm
                 intensity_left += fade_intensity_l
                 
-            elif sensor_name == 'sensor_b':  # F3 - Left Frontal Cortex
-                # Define center point for F3 position (left frontal - anterior region)
+            elif sensor_name == 'sensor_b':  # F3 - Corteza Frontal Izquierda
+                # Definir punto central para posición F3 (frontal izquierdo - región anterior)
                 center_l = np.array([x_min_l + (x_max_l - x_min_l) * 0.3, 
-                                   y_max_l - (y_max_l - y_min_l) * 0.2,  # Anterior (front)
+                                   y_max_l - (y_max_l - y_min_l) * 0.2,  # Anterior (frente)
                                    z_min_l + (z_max_l - z_min_l) * 0.6])
                 
                 distances_l = np.sqrt(np.sum((coords_left - center_l)**2, axis=1))
@@ -238,15 +236,15 @@ class BrainVisualizer:
                 fade_intensity_l[fade_mask_l] = (1 - distances_l[fade_mask_l] / max_distance_l) * attention_norm
                 intensity_left += fade_intensity_l
                 
-            elif sensor_name == 'sensor_c':  # FPz - Midline Forehead (Ground)
-                # Define center points for FPz position (midline frontal - very front)
+            elif sensor_name == 'sensor_c':  # FPz - Línea Media de la Frente (Tierra)
+                # Definir puntos centrales para posición FPz (frontal de línea media - muy adelante)
                 center_r = np.array([((x_min_r + x_max_r) / 2) * 0.4, 
-                                   (y_max_r - (y_max_r - y_min_r)) * -0.62,  # Very anterior (front)
-                                   z_max_r * 0.21])  # Top of the brain
+                                   (y_max_r - (y_max_r - y_min_r)) * -0.62,  # Muy anterior (frente)
+                                   z_max_r * 0.21])  # Parte superior del cerebro
                 center_l = np.array([((x_min_l + x_max_l) / 2) * 0.4, 
-                                  ( y_max_l - (y_max_l - y_min_l)) * -0.62 ,  # Very anterior (front)
-                                   z_max_l * 0.21])  # Top of the brain
-                 # Apply to right hemisphere
+                                  ( y_max_l - (y_max_l - y_min_l)) * -0.62 ,  # Muy anterior (frente)
+                                   z_max_l * 0.21])  # Parte superior del cerebro
+                 # Aplicar al hemisferio derecho
                 distances_r = np.sqrt(np.sum((coords_right - center_r)**2, axis=1))
                 max_distance_r = brain_size_r * 0.2 * coverage_factor
                 
@@ -255,7 +253,7 @@ class BrainVisualizer:
                 fade_intensity_r[fade_mask_r] = (1 - distances_r[fade_mask_r] / max_distance_r) * attention_norm
                 intensity_right += fade_intensity_r
                 
-                # Apply to left hemisphere
+                # Aplicar al hemisferio izquierdo
                 distances_l = np.sqrt(np.sum((coords_left - center_l)**2, axis=1))
                 max_distance_l = brain_size_l * 0.2 * coverage_factor
                 
@@ -264,10 +262,10 @@ class BrainVisualizer:
                 fade_intensity_l[fade_mask_l] = (1 - distances_l[fade_mask_l] / max_distance_l) * attention_norm
                 intensity_left += fade_intensity_l
                 
-            elif sensor_name == 'sensor_d':  # F4 - Right Frontal Cortex
-                # Define center point for F4 position (right frontal - anterior region)
+            elif sensor_name == 'sensor_d':  # F4 - Corteza Frontal Derecha
+                # Definir punto central para posición F4 (frontal derecho - región anterior)
                 center_r = np.array([x_max_r - (x_max_r - x_min_r) * 0.3, 
-                                   y_max_r - (y_max_r - y_min_r) * 0.2,  # Anterior (front)
+                                   y_max_r - (y_max_r - y_min_r) * 0.2,  # Anterior (frente)
                                    z_min_r + (z_max_r - z_min_r) * 0.6])
                 
                 distances_r = np.sqrt(np.sum((coords_right - center_r)**2, axis=1))
@@ -278,10 +276,10 @@ class BrainVisualizer:
                 fade_intensity_r[fade_mask_r] = (1 - distances_r[fade_mask_r] / max_distance_r) * meditation_norm
                 intensity_right += fade_intensity_r
                 
-            elif sensor_name == 'sensor_e':  # P2 - Right Parietal Lobe (between Pz and T6)
-                # Define center point for P2 position (right parietal - posterior region)
+            elif sensor_name == 'sensor_e':  # P2 - Lóbulo Parietal Derecho (entre Pz y T6)
+                # Definir punto central para posición P2 (parietal derecho - región posterior)
                 center_r = np.array([x_max_r - (x_max_r - x_min_r) * 0.3, 
-                                   y_min_r + (y_max_r - y_min_r) * 0.2,  # Posterior (back)
+                                   y_min_r + (y_max_r - y_min_r) * 0.2,  # Posterior (atrás)
                                    z_min_r + (z_max_r - z_min_r) * 0.7])
                 
                 distances_r = np.sqrt(np.sum((coords_right - center_r)**2, axis=1))
@@ -296,20 +294,20 @@ class BrainVisualizer:
     
     def create_live_brain_figure(self, all_sensors_data):
         """
-        Create brain figure with live EEG data from sensors.
+        Crear figura del cerebro con datos EEG en vivo de los sensores.
         
-        Parameters:
-        - all_sensors_data: Dictionary with sensor data (can be one or multiple sensors)
+        Parámetros:
+        - all_sensors_data: Diccionario con datos de sensores (puede ser uno o múltiples sensores)
         
-        Returns:
-        - plotly.graph_objects.Figure: Updated 3D brain visualization
+        Retorna:
+        - plotly.graph_objects.Figure: Visualización 3D del cerebro actualizada
         """
         if not self._lazy_init():
             return self._create_fallback_figure()
             
         intensity_right, intensity_left = self.update_brain_intensity(all_sensors_data)
         
-        # Determine title suffix based on data
+        # Determinar sufijo del título basado en los datos
         sensor_count = len([k for k in all_sensors_data.keys() if k != 'uid'])
         if sensor_count == 1:
             sensor_name = [k for k in all_sensors_data.keys() if k != 'uid'][0]
@@ -319,5 +317,5 @@ class BrainVisualizer:
             
         return self.create_brain_figure(intensity_right, intensity_left, title_suffix)
 
-# Global brain visualizer instance
+# Instancia global del visualizador de cerebro
 brain_viz = BrainVisualizer()

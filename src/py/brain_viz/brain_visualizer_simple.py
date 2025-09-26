@@ -1,6 +1,5 @@
 """
 Brain 3D visualization component - VERSIÓN SIMPLE
-Mantiene el modelo exacto de test3.py con opción de mostrar marcadores de sensores
 """
 
 import numpy as np
@@ -12,7 +11,7 @@ class BrainVisualizer:
     """
     
     def __init__(self):
-        """Initialize the brain visualizer with lazy loading."""
+        """Inicializar el visualizador del cerebro con carga diferida."""
         self.fsaverage = None
         self.mesh_right = None
         self.mesh_left = None
@@ -22,22 +21,22 @@ class BrainVisualizer:
         self._initialized = False
         
     def _lazy_init(self):
-        """Lazy initialization of nilearn components."""
+        """Inicialización diferida de los componentes de nilearn."""
         if self._initialized:
             return True
             
         try:
             from nilearn import datasets, surface
             
-            # Load fsaverage surface data (exactly like test3.py)
+            # Cargar datos de superficie fsaverage (exactamente como test3.py)
             self.fsaverage = datasets.fetch_surf_fsaverage()
             motor_img = datasets.load_sample_motor_activation_image()
             
-            # Load meshes for both hemispheres (exactly like test3.py)
+            # Cargar mallas para ambos hemisferios (exactamente como test3.py)
             self.mesh_right = surface.load_surf_mesh(self.fsaverage.pial_right)
             self.mesh_left = surface.load_surf_mesh(self.fsaverage.pial_left)
             
-            # Get reference activation maps (exactly like test3.py)
+            # Obtener mapas de activación de referencia (exactamente como test3.py)
             self.reference_map_right = surface.vol_to_surf(motor_img, self.mesh_right)
             self.reference_map_left = surface.vol_to_surf(motor_img, self.mesh_left)
             
@@ -45,20 +44,20 @@ class BrainVisualizer:
             return True
             
         except Exception as e:
-            print(f"Warning: Could not initialize nilearn components: {e}")
+            print(f"Advertencia: No se pudieron inicializar los componentes de nilearn: {e}")
             return False
     
     def create_brain_figure_original(self):
         """
-        Create the EXACT same brain figure as test3.py
+        Crear la figura del cerebro
         """
         if not self._lazy_init():
             return self._create_fallback_figure()
         
-        # Create figure exactly like test3.py
+        # Crear figura exactamente como test3.py
         fig = go.Figure()
         
-        # Add right hemisphere with colorbar (exactly like test3.py)
+        # Agregar hemisferio derecho con barra de color (exactamente como test3.py)
         fig.add_trace(go.Mesh3d(
             x=self.mesh_right.coordinates[:, 0],
             y=self.mesh_right.coordinates[:, 1],
@@ -80,7 +79,7 @@ class BrainVisualizer:
             opacity=1
         ))
         
-        # Add left hemisphere without colorbar (exactly like test3.py)
+        # Agregar hemisferio izquierdo sin barra de color (exactamente como test3.py)
         fig.add_trace(go.Mesh3d(
             x=self.mesh_left.coordinates[:, 0],
             y=self.mesh_left.coordinates[:, 1],
@@ -97,7 +96,7 @@ class BrainVisualizer:
             opacity=1
         ))
         
-        # Layout exactly like test3.py
+        # Diseño exactamente como test3.py
         fig.update_layout(
              scene=dict(
                 xaxis=dict(visible=False),
@@ -117,7 +116,7 @@ class BrainVisualizer:
             return fig
             
         try:
-            # Get brain bounds for marker positioning
+            # Obtener límites del cerebro para posicionamiento de marcadores
             coords_right = self.mesh_right.coordinates
             coords_left = self.mesh_left.coordinates
             
@@ -129,7 +128,7 @@ class BrainVisualizer:
             y_min_l, y_max_l = coords_left[:, 1].min(), coords_left[:, 1].max()
             z_min_l, z_max_l = coords_left[:, 2].min(), coords_left[:, 2].max()
             
-            # Simple sensor positions
+            # Posiciones simples de sensores
             sensors = [
                 # Sensor A - Centro
                 {
@@ -173,7 +172,7 @@ class BrainVisualizer:
                 }
             ]
             
-            # Add each marker
+            # Agregar cada marcador
             for sensor in sensors:
                 fig.add_trace(go.Scatter3d(
                     x=[sensor['x']],
@@ -190,7 +189,7 @@ class BrainVisualizer:
                 ))
                 
         except Exception as e:
-            print(f"Warning: Could not add sensor markers: {e}")
+            print(f"Advertencia: No se pudieron agregar marcadores de sensores: {e}")
             
         return fig
     
@@ -204,7 +203,7 @@ class BrainVisualizer:
         return fig
     
     def _create_fallback_figure(self):
-        """Create a fallback figure when nilearn is not available."""
+        """Crear una figura de respaldo cuando nilearn no está disponible."""
         fig = go.Figure()
         fig.add_annotation(
             text="Cerebro 3D no disponible<br>Instale nilearn para visualización completa",
@@ -220,5 +219,5 @@ class BrainVisualizer:
         )
         return fig
 
-# Global instance
+# Instancia global
 brain_viz_simple = BrainVisualizer()
