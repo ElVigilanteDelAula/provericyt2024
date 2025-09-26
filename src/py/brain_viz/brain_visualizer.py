@@ -242,14 +242,13 @@ class BrainVisualizer:
                 
             elif sensor_name == 'sensor_c':  # FPz - Midline Forehead (Ground)
                 # Define center points for FPz position (midline frontal - very front)
-                center_r = np.array([(x_min_r + x_max_r) / 2, 
-                                   y_min_r + (y_max_r - y_min_r) * 0.1,  # Very anterior (front)
-                                   z_max_r])  # Top of the brain
-                center_l = np.array([(x_min_l + x_max_l) / 2, 
-                                   y_min_l + (y_max_l - y_min_l) * 0.1,  # Very anterior (front)
-                                   z_max_l])  # Top of the brain
-                
-                # Apply to right hemisphere
+                center_r = np.array([((x_min_r + x_max_r) / 2) * 0.4, 
+                                   (y_max_r - (y_max_r - y_min_r)) * -0.62,  # Very anterior (front)
+                                   z_max_r * 0.21])  # Top of the brain
+                center_l = np.array([((x_min_l + x_max_l) / 2) * 0.4, 
+                                  ( y_max_l - (y_max_l - y_min_l)) * -0.62 ,  # Very anterior (front)
+                                   z_max_l * 0.21])  # Top of the brain
+                 # Apply to right hemisphere
                 distances_r = np.sqrt(np.sum((coords_right - center_r)**2, axis=1))
                 max_distance_r = brain_size_r * 0.2 * coverage_factor
                 
