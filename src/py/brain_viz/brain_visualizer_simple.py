@@ -99,8 +99,7 @@ class BrainVisualizer:
         
         # Layout exactly like test3.py
         fig.update_layout(
-            title="Cerebro 3D - Visualización EEG en Tiempo Real",
-            scene=dict(
+             scene=dict(
                 xaxis=dict(visible=False),
                 yaxis=dict(visible=False),
                 zaxis=dict(visible=False)

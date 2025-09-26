@@ -113,18 +113,16 @@ class BrainVisualizer:
             opacity=1
         ))
         
-        # Update layout with dynamic title
-        title = f"Cerebro 3D - Visualización EEG en Tiempo Real{title_suffix}"
+         # Update layout with dynamic title
         fig.update_layout(
-            title=title,
             scene=dict(
-                xaxis=dict(visible=False),
-                yaxis=dict(visible=False),
-                zaxis=dict(visible=False),
-                bgcolor="white"
+               xaxis=dict(visible=False),
+               yaxis=dict(visible=False),
+               zaxis=dict(visible=False),
+               bgcolor="white"
             ),
-            margin=dict(l=0, r=0, t=40, b=0),
-            height=600
+           margin=dict(l=0, r=0, t=40, b=0),
+           height=600
         )
         
         self.fig = fig
