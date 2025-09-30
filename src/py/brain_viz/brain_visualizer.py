@@ -46,7 +46,7 @@ class BrainVisualizer:
             return True
             
         except Exception as e:
-            print(f"Advertencia: No se pudieron inicializar los componentes de nilearn: {e}")
+            # Silently fail if nilearn components cannot be initialized
             return False
         
     def create_brain_figure(self, intensity_right=None, intensity_left=None, title_suffix=""):

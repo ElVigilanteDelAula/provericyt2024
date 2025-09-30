@@ -29,12 +29,6 @@ def register_brain_callbacks(app):
         # Detectar qué disparó el callback para optimizar actualizaciones
         triggered_id = ctx.triggered_id if ctx.triggered else None
         
-        # Solo mostrar logs para cambios importantes, no para cada tick del timer
-        if triggered_id != 'timer':
-            print(f"\n🧠 Brain update: trigger={triggered_id}, sensor={selected_sensor}, mode={quantity_mode}")
-            if camera_state:
-                print(f"📷 Camera state available: {list(camera_state.keys()) if camera_state else 'None'}")
-        
         if not data or 'uid' not in data:
             return go.Figure().add_annotation(
                 text="Esperando datos de la sesión...",
@@ -50,14 +44,10 @@ def register_brain_callbacks(app):
                 # Mostrar todos los sensores disponibles
                 sensors_data = {k: v for k, v in data.items() if k != 'uid' and v is not None}
                 sensors_data['uid'] = session_uid
-                if triggered_id != 'timer':
-                    print(f"📊 Modo TODOS: {len(sensors_data)-1} sensores disponibles")
             else:  # modo 'individual'
                 # Usar solo el sensor seleccionado
                 if selected_sensor in data:
                     sensors_data = {selected_sensor: data[selected_sensor], 'uid': session_uid}
-                    if triggered_id != 'timer':
-                        print(f"📊 Modo INDIVIDUAL: sensor {selected_sensor}")
                 else:
                     return go.Figure().add_annotation(
                         text=f"No hay datos para: {selected_sensor}",
@@ -77,22 +67,15 @@ def register_brain_callbacks(app):
             
             # CRUCIAL: Aplicar cámara guardada si existe (refuerzo adicional al uirevision)
             if camera_state and new_figure and 'layout' in new_figure:
-                if triggered_id != 'timer':
-                    print(f"🎯 Applying saved camera state as backup to uirevision")
-                
                 if 'scene' not in new_figure['layout']:
                     new_figure['layout']['scene'] = {}
                 
                 # Aplicar la cámara guardada como respaldo
                 new_figure['layout']['scene']['camera'] = camera_state.copy()
             
-            if triggered_id != 'timer':
-                print(f"✅ Brain figure created for {quantity_mode} mode")
-            
             return new_figure, camera_state
             
         except Exception as e:
-            print(f"❌ Error in brain visualization: {e}")
             return go.Figure().add_annotation(
                 text=f"Error: {str(e)}",
                 xref="paper", yref="paper", x=0.5, y=0.5,
@@ -122,7 +105,6 @@ def register_brain_callbacks(app):
             camera_data = relayout_data['scene']['camera']
         
         if camera_data:
-            print(f"📷 Camera state captured and stored")
             return camera_data
         
         return current_state
