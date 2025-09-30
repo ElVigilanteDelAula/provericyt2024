@@ -14,6 +14,8 @@ def create_brain_component():
     initial_figure = brain_viz.create_brain_figure()
     
     brain_graph = html.Div([
+        # Store para mantener el estado de la cámara
+        dcc.Store(id='brain_camera_store', data={}),
         dcc.Graph(
             figure=initial_figure,
             id='brain_graph',
@@ -27,7 +29,10 @@ def create_brain_component():
                 'modeBarButtonsToRemove': [
                     'pan2d', 'lasso2d', 'select2d', 'autoScale2d',
                     'hoverClosestCartesian', 'hoverCompareCartesian'
-                ]
+                ],
+                # Configuración mejorada para interacción 3D
+                'scrollZoom': True,
+                'doubleClick': 'reset'
             }
         )
     ], style={

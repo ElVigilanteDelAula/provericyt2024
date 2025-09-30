@@ -111,16 +111,18 @@ class BrainVisualizer:
             opacity=1
         ))
         
-         # Actualizar diseño con título dinámico
+         # Actualizar diseño con configuración original y uirevision
         fig.update_layout(
             scene=dict(
                xaxis=dict(visible=False),
                yaxis=dict(visible=False),
                zaxis=dict(visible=False),
-               bgcolor="white"
+               bgcolor="white",
+               uirevision="brain_camera"  # Mantener la posición de la cámara
             ),
            margin=dict(l=0, r=0, t=40, b=0),
-           height=600
+           height=600,
+           uirevision="brain_layout"  # Mantener el layout general
         )
         
         self.fig = fig
@@ -316,6 +318,32 @@ class BrainVisualizer:
             title_suffix = f" - Todos los Sensores ({sensor_count})"
             
         return self.create_brain_figure(intensity_right, intensity_left, title_suffix)
+    
+    def update_live_brain_intensity(self, all_sensors_data):
+        """
+        Actualizar solo la intensidad del cerebro para preservar la posición de la cámara.
+        Retorna datos para actualización incremental sin recrear la figura.
+        
+        Parámetros:
+        - all_sensors_data: Diccionario con datos de sensores
+        
+        Retorna:
+        - dict: Datos de actualización para Plotly (formato extendData)
+        """
+        if not self._initialized:
+            return None
+            
+        intensity_right, intensity_left = self.update_brain_intensity(all_sensors_data)
+        
+        if intensity_right is None or intensity_left is None:
+            return None
+            
+        # Retornar datos de actualización en formato para Plotly extendData/restyle
+        return {
+            'intensity_right': intensity_right,
+            'intensity_left': intensity_left,
+            'trace_indices': [0, 1]  # Índices de las trazas del hemisferio derecho e izquierdo
+        }
 
 # Instancia global del visualizador de cerebro
 brain_viz = BrainVisualizer()
