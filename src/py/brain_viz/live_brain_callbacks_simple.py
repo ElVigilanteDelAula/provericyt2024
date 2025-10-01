@@ -1,7 +1,10 @@
 """
 Callbacks simplificados para actualizaciones de visualización del cerebro en vivo.
 Usa uirevision de Plotly para preservar automáticamente la posición de la cámara.
-Incluye funcionalidad para pausar actualizaciones durante click presionado del mouse.
+ESTRATEGIA PROACTIVA de detección de interacción:
+1. Mouse tracker global: mousedown/mouseup en el área de la gráfica
+2. relayoutData: Cualquier evento pausa por 2s (backup confiable)
+3. Timer: Auto-reset después de 2s sin actividad
 """
 
 import plotly.graph_objects as go
@@ -13,50 +16,48 @@ from src.py.brain_viz.brain_visualizer import brain_viz
 def register_brain_callbacks(app):
     """Registrar callbacks del cerebro con la aplicación Dash."""
     
-    # SOLUCION: ClientsideCallback simplificado y más robusto
+    # ClientsideCallback simplificado para detección de mouse
     app.clientside_callback(
         """
         function(n_intervals) {
             try {
-                // Verificar si existe el estado global
-                if (typeof window.brainInteractionState === 'undefined') {
-                    window.brainInteractionState = {
-                        isInteracting: false,
-                        lastInteraction: 0,
-                        listenersInstalled: false
+                // Estado simple para tracking de mouse
+                if (typeof window.mouseTracker === 'undefined') {
+                    window.mouseTracker = {
+                        isPressed: false,
+                        lastUpdate: 0
                     };
+                    
+                    // Instalar listeners globales una sola vez
+                    document.addEventListener('mousedown', function(e) {
+                        // Solo si es en el área de la gráfica
+                        const target = e.target;
+                        const graphContainer = document.getElementById('brain_graph');
+                        if (graphContainer && graphContainer.contains(target)) {
+                            console.log('🖱️ MOUSEDOWN en gráfica - PAUSANDO');
+                            window.mouseTracker.isPressed = true;
+                            window.mouseTracker.lastUpdate = Date.now() / 1000;
+                        }
+                    });
+                    
+                    document.addEventListener('mouseup', function(e) {
+                        if (window.mouseTracker.isPressed) {
+                            console.log('🖱️ MOUSEUP detectado - REANUDANDO');
+                            window.mouseTracker.isPressed = false;
+                            window.mouseTracker.lastUpdate = Date.now() / 1000;
+                        }
+                    });
+                    
+                    console.log('✅ Mouse tracker instalado globalmente');
                 }
                 
-                // Solo intentar instalar listeners si la gráfica existe
-                const graph = document.getElementById('brain_graph');
-                if (graph && !window.brainInteractionState.listenersInstalled) {
-                    const canvas = graph.querySelector('canvas');
-                    if (canvas) {
-                        console.log('🖱️ Instalando listeners de mouse');
-                        
-                        canvas.addEventListener('mousedown', function() {
-                            console.log('🖱️ MOUSEDOWN detectado');
-                            window.brainInteractionState.isInteracting = true;
-                            window.brainInteractionState.lastInteraction = Date.now() / 1000;
-                        });
-                        
-                        canvas.addEventListener('mouseup', function() {
-                            console.log('🖱️ MOUSEUP detectado');
-                            window.brainInteractionState.isInteracting = false;
-                        });
-                        
-                        window.brainInteractionState.listenersInstalled = true;
-                    }
-                }
-                
-                // Retornar el estado actual
                 return {
-                    is_interacting: window.brainInteractionState.isInteracting,
-                    last_interaction: window.brainInteractionState.lastInteraction
+                    is_interacting: window.mouseTracker.isPressed,
+                    last_interaction: window.mouseTracker.lastUpdate
                 };
                 
             } catch (error) {
-                console.error('Error en ClientsideCallback:', error);
+                console.error('Error en mouse tracker:', error);
                 return {is_interacting: false, last_interaction: 0};
             }
         }
@@ -76,7 +77,10 @@ def register_brain_callbacks(app):
     )
     def detect_interaction_hybrid(relayout_data, n_intervals, interaction_state):
         """
-        HIBRIDO: Combinar detección por relayoutData con auto-reset por timer.
+        ESTRATEGIA PROACTIVA: 
+        1. ClientsideCallback: Detección global de mousedown/mouseup 
+        2. relayoutData: Cualquier evento = pausa proactiva por 2s
+        3. Timer: Auto-reset después de 2s sin eventos
         """
         import time
         from dash import callback_context
@@ -93,89 +97,37 @@ def register_brain_callbacks(app):
         
         # Si viene del relayoutData, detectar interacción
         if triggered_id == 'brain_graph' and relayout_data:
-            camera_events = ['scene.camera']
-            is_camera_event = any(key.startswith(event) for event in camera_events for key in relayout_data.keys())
-            
-            if is_camera_event:
-                # TRUCO: Marcar como interactuando por UN BREVE MOMENTO
-                new_state = {
-                    'is_interacting': True,
-                    'last_interaction': current_time
-                }
-                print(f"📱 DETECCION HIBRIDA: Interacción iniciada temporalmente")
-                return new_state
-        
-        # Si viene del timer, verificar auto-reset
-        elif triggered_id == 'interaction_timer':
-            if interaction_state.get('is_interacting', False):
-                time_since_last = current_time - interaction_state.get('last_interaction', 0)
-                
-                # Auto-reset después de 3 segundos (tiempo suficiente para completar la interacción)
-                if time_since_last > 3.0:
-                    new_state = {
-                        'is_interacting': False,
-                        'last_interaction': interaction_state.get('last_interaction', 0)
-                    }
-                    print(f"🔄 AUTO-RESET HIBRIDO: {time_since_last:.3f}s sin interacción")
-                    return new_state
-        
-        # Mantener estado actual
-        return interaction_state
-        camera_events = ['scene.camera']  # Solo cambios directos de cámara
-        is_camera_event = any(key.startswith(event) for event in camera_events for key in relayout_data.keys())
-        
-        print(f"📱 DETECTAR INTERACCION: eventos={list(relayout_data.keys())}, es_camara={is_camera_event}")
-        
-        if is_camera_event:
+            # ESTRATEGIA PROACTIVA: ANY relayout event = interacción
+            # Esto incluye cambios de zoom, rotación, pan, etc.
             new_state = {
                 'is_interacting': True,
                 'last_interaction': current_time
             }
-            print(f"   → INTERACCION INICIADA: {new_state}")
+            print(f"📱 DETECCION PROACTIVA: Evento relayout - PAUSANDO por 2s")
+            print(f"   → Eventos: {list(relayout_data.keys())}")
             return new_state
         
-        current_state = interaction_state or {'is_interacting': False, 'last_interaction': 0}
+        # Si viene del timer, usar para auto-reset inteligente
+        elif triggered_id == 'interaction_timer':
+            if interaction_state.get('is_interacting', False):
+                time_since_last = current_time - interaction_state.get('last_interaction', 0)
+                
+                # Auto-reset después de 2 segundos SIN nuevos eventos
+                # Esto maneja cuando la interacción termina pero no hay mouseup
+                if time_since_last > 2.0:
+                    new_state = {
+                        'is_interacting': False,
+                        'last_interaction': interaction_state.get('last_interaction', 0)
+                    }
+                    print(f"🔄 AUTO-RESET: {time_since_last:.3f}s sin nuevos eventos - REANUDANDO")
+                    return new_state
+            
+            # Mantener estado actual si no es momento de reset
+            print(f"⏰ TIMER: Manteniendo estado - interactuando={interaction_state.get('is_interacting', False)}")
+            return interaction_state
         
-        # Auto-reset del flag si ha pasado mucho tiempo sin nuevas interacciones
-        if current_state.get('is_interacting', False):
-            time_since_last = current_time - current_state.get('last_interaction', 0)
-            if time_since_last > 2.0:  # 2 segundos sin nueva interacción = auto-reset
-                current_state = {'is_interacting': False, 'last_interaction': current_state.get('last_interaction', 0)}
-                print(f"   → AUTO-RESET: {time_since_last:.1f}s sin interacción, flag a False")
-        
-        print(f"   → Sin interacción nueva, manteniendo: {current_state}")
-        return current_state
-        # """
-        # Verificar si la interacción ha terminado y forzar actualización si es necesario.
-        # COMENTADO: Tiene bugs de propagación de estado en Dash
-        # """
-        # import time
-        
-        # if not interaction_state:
-        #     return {'is_interacting': False, 'last_interaction': 0}, no_update
-        
-        # current_time = time.time()
-        # last_interaction = interaction_state.get('last_interaction', 0)
-        # is_currently_interacting = interaction_state.get('is_interacting', False)
-        
-        # print(f"⏰ TIMER CHECK: interactuando={is_currently_interacting}, última_interacción={last_interaction}, tiempo_actual={current_time}")
-        
-        # if not is_currently_interacting:
-        #     print(f"   → NO está interactuando, sin cambios")
-        #     return interaction_state, no_update
-        
-        # # Si han pasado más de 400ms sin eventos, la interacción terminó
-        # time_since_last = current_time - last_interaction
-        # print(f"   → Tiempo transcurrido: {time_since_last:.3f}s")
-        
-        # if time_since_last > 0.4:
-        #     print(f"🔄 INTERACCIÓN TERMINADA - Forzando actualización desde timer")
-        #     return new_state, new_figure
-        # else:
-        #     print(f"   → Aún interactuando, esperando...")
-        
-        # return interaction_state, no_update
-        pass
+        # Mantener estado actual
+        return interaction_state
 
     @app.callback(
         [Output('brain_graph', 'figure'),
@@ -190,39 +142,32 @@ def register_brain_callbacks(app):
     def update_brain_visualization(n_intervals, data, selected_sensor, quantity_mode, camera_state, interaction_state):
         """
         Callback principal para actualizar la visualización del cerebro 3D.
-        SOLUCION BYPASS: Verifica directamente el tiempo transcurrido en lugar de confiar en el estado.
+        ESTRATEGIA: Pausa mientras is_interacting=True (controlado por mousedown/mouseup)
+        con auto-reset de seguridad después de 1s sin eventos de cámara.
         """
         import time
         
         # Debug simplificado
         triggered_id = ctx.triggered_id if ctx.triggered else None
         
-        # VERIFICACION CON AUTO-RESET: El callback principal también debe poder resetear el flag
+        # VERIFICACION SIMPLIFICADA: Solo verificar el flag actual sin auto-reset
         current_time = time.time()
         should_pause = False
-        updated_interaction_state = interaction_state
         
         if interaction_state:
             is_interacting_flag = interaction_state.get('is_interacting', False)
             last_interaction = interaction_state.get('last_interaction', 0)
-            time_since_last = current_time - last_interaction
             
-            # Auto-reset aquí también si ha pasado demasiado tiempo
-            if is_interacting_flag and time_since_last > 3.0:
-                print(f"🔄 AUTO-RESET EN CALLBACK: {time_since_last:.1f}s sin interacción, reseteando flag")
-                updated_interaction_state = {'is_interacting': False, 'last_interaction': last_interaction}
-                is_interacting_flag = False
+            # CAMBIO: Solo pausar si el flag está True, sin auto-reset por tiempo
+            should_pause = is_interacting_flag
             
-            # PAUSA EXTENDIDA: Solo si el flag está True Y han pasado menos de 2.5 segundos
-            should_pause = is_interacting_flag and time_since_last < 2.5
-            
-            print(f"🔄 CALLBACK BYPASS: triggered={triggered_id}, flag_interactuando={is_interacting_flag}, hace={time_since_last:.3f}s, pausar={should_pause}")
+            print(f"🔄 CALLBACK: triggered={triggered_id}, flag_interactuando={is_interacting_flag}, pausar={should_pause}")
         else:
-            print(f"🔄 CALLBACK BYPASS: sin estado de interacción, continuar")
+            print(f"🔄 CALLBACK: sin estado de interacción, continuar")
         
-        # Pausar solo si hay interacción activa y reciente
+        # Pausar solo si hay interacción activa
         if should_pause and triggered_id in ['timer', 'memory']:
-            print(f"🚫 PAUSADO - interacción activa reciente")
+            print(f"🚫 PAUSADO - interacción activa")
             return no_update, camera_state
         
         if not data or 'uid' not in data:
