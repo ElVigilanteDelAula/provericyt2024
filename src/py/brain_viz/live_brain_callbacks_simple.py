@@ -110,8 +110,8 @@ def register_brain_callbacks(app):
             if interaction_state.get('is_interacting', False):
                 time_since_last = current_time - interaction_state.get('last_interaction', 0)
                 
-                # Auto-reset después de 800ms (corto pero suficiente para pausar)
-                if time_since_last > 0.8:
+                # Auto-reset después de 3 segundos (tiempo suficiente para completar la interacción)
+                if time_since_last > 3.0:
                     new_state = {
                         'is_interacting': False,
                         'last_interaction': interaction_state.get('last_interaction', 0)
@@ -208,13 +208,13 @@ def register_brain_callbacks(app):
             time_since_last = current_time - last_interaction
             
             # Auto-reset aquí también si ha pasado demasiado tiempo
-            if is_interacting_flag and time_since_last > 2.0:
+            if is_interacting_flag and time_since_last > 3.0:
                 print(f"🔄 AUTO-RESET EN CALLBACK: {time_since_last:.1f}s sin interacción, reseteando flag")
                 updated_interaction_state = {'is_interacting': False, 'last_interaction': last_interaction}
                 is_interacting_flag = False
             
-            # PAUSA MENOS AGRESIVA: Solo si el flag está True Y han pasado menos de 1.5 segundos
-            should_pause = is_interacting_flag and time_since_last < 1.5
+            # PAUSA EXTENDIDA: Solo si el flag está True Y han pasado menos de 2.5 segundos
+            should_pause = is_interacting_flag and time_since_last < 2.5
             
             print(f"🔄 CALLBACK BYPASS: triggered={triggered_id}, flag_interactuando={is_interacting_flag}, hace={time_since_last:.3f}s, pausar={should_pause}")
         else:
