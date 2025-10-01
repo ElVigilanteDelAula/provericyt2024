@@ -16,6 +16,10 @@ def create_brain_component():
     brain_graph = html.Div([
         # Store para mantener el estado de la cámara
         dcc.Store(id='brain_camera_store', data={}),
+        # Store para controlar si se debe pausar las actualizaciones durante interacción
+        dcc.Store(id='brain_interaction_store', data={'is_interacting': False, 'last_interaction': 0}),
+        # Timer para detectar cuando termina la interacción
+        dcc.Interval(id='interaction_timer', interval=200, n_intervals=0),
         dcc.Graph(
             figure=initial_figure,
             id='brain_graph',
