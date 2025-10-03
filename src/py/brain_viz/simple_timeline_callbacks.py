@@ -237,12 +237,23 @@ def register_simple_timeline_callbacks(app):
         # Crear una copia de la figura
         fig = go.Figure(current_figure)
         
-        # Remover líneas verticales existentes
-        fig.data = [trace for trace in fig.data if not (hasattr(trace, 'mode') and trace.mode == 'lines' and hasattr(trace, 'name') and trace.name == 'marker')]
+        # LIMPIAR todas las shapes (líneas verticales) existentes
+        if 'shapes' in fig.layout:
+            fig.layout.shapes = []
         
-        # Agregar marcador si estamos en modo histórico
+        # LIMPIAR todas las annotations existentes de marcadores
+        if 'annotations' in fig.layout:
+            # Mantener solo las annotations originales (no las de marcadores)
+            fig.layout.annotations = [
+                ann for ann in fig.layout.annotations 
+                if ann.text != "📍"
+            ]
+        
+        # Agregar marcador SOLO si estamos en modo histórico
         if mode_data.get('mode') == 'historical' and mode_data.get('selected_time') is not None:
             selected_time = mode_data['selected_time']
+            
+            print(f"📍 Agregando marcador en t={selected_time:.1f}s")
             
             fig.add_vline(
                 x=selected_time,
@@ -252,5 +263,7 @@ def register_simple_timeline_callbacks(app):
                 annotation_text="📍",
                 annotation_position="top"
             )
+        else:
+            print(f"🧹 Limpiando marcadores (modo: {mode_data.get('mode')})")
         
         return fig
