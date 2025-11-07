@@ -31,12 +31,15 @@ if not db.events_exists(uid):
 
 custom_css = r'''
 .accordion-item:last-of-type > .accordion-header .accordion-button.collapsed {
-  border-bottom-right-radius: var(--bs-accordion-inner-border-radius);
-  border-bottom-left-radius: var(--bs-accordion-inner-border-radius);
-  background-color: green;
+    border-bottom-right-radius: var(--bs-accordion-inner-border-radius);
+    border-bottom-left-radius: var(--bs-accordion-inner-border-radius);
+    background-color: green;
 }
 '''
-app = Dash(external_stylesheets=[dbc.themes.MATERIA, custom_css])
+app = Dash(
+        external_stylesheets=[dbc.themes.MATERIA, custom_css],
+        suppress_callback_exceptions=True  # Permite callbacks hacia componentes creados dinámicamente
+)
 
 app.layout= components.app_layout
 
