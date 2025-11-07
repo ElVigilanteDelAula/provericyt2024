@@ -96,12 +96,12 @@ def create_simple_timeline():
                     color="success",
                     size="sm"
                 ),
-                dbc.Button(
-                    "🔄 Resetear", 
-                    id="simple_timeline_reset_btn", 
-                    color="secondary",
-                    size="sm"
-                )
+                # dbc.Button(
+                #     "🔄 Resetear", 
+                #     id="simple_timeline_reset_btn", 
+                #     color="secondary",
+                #     size="sm"
+                # )
             ], className="me-2"),
             dbc.Badge(
                 "🔴 EN VIVO", 

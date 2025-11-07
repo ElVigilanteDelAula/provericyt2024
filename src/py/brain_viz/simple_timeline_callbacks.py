@@ -10,18 +10,14 @@ def register_simple_timeline_callbacks(app):
 
     @app.callback(
         Output('simple_session_data', 'data'),
-        [Input('memory', 'data'),
-         Input('simple_timeline_reset_btn', 'n_clicks')],
+        Input('memory', 'data'),
         [State('simple_session_data', 'data'),
          State('simple_timeline_mode', 'data')],
         prevent_initial_call=True
     )
-    def update_session_data(memory_data, _reset_clicks, session_data, mode_data):
+    def update_session_data(memory_data, session_data, mode_data):
         """Actualizar los datos de la sesión actual."""
         triggered_id = ctx.triggered_id if ctx.triggered else None
-
-        if triggered_id == 'simple_timeline_reset_btn':
-            return _fresh_session_state()
 
         if not memory_data or 'uid' not in memory_data:
             return session_data
@@ -76,14 +72,14 @@ def register_simple_timeline_callbacks(app):
         [Output('simple_timeline_mode', 'data'),
          Output('simple_timeline_status_badge', 'children'),
          Output('simple_timeline_status_badge', 'color')],
-        [Input('simple_timeline_graph', 'clickData'),
-         Input('simple_timeline_pause_btn', 'n_clicks'),
-         Input('simple_timeline_resume_btn', 'n_clicks')],
-        [State('simple_timeline_mode', 'data'),
-         State('simple_session_data', 'data')],
+        Input('simple_timeline_graph', 'clickData'),
+        Input('simple_timeline_pause_btn', 'n_clicks'),
+        Input('simple_timeline_resume_btn', 'n_clicks'),
+        State('simple_timeline_mode', 'data'),
+        State('simple_session_data', 'data'),
         prevent_initial_call=True
     )
-    def handle_timeline_controls(click_data, pause_clicks, resume_clicks, 
+    def handle_timeline_controls(click_data, pause_clicks, resume_clicks,
                                 mode_data, session_data):
         """Manejar clicks en el timeline y botones de control."""
         
