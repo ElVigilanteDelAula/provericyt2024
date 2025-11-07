@@ -1,306 +1,203 @@
-"""
-Callbacks simplificados para actualizaciones de visualización del cerebro en vivo.
-Usa uirevision de Plotly para preservar automáticamente la posición de la cámara.
-INCLUYE TIMELINE interactivo para navegación temporal de la sesión actual.
+"""Callbacks centralizados para la visualización en vivo del cerebro 3D."""
 
-ESTRATEGIA PROACTIVA de detección de interacción:
-1. Mouse tracker global: mousedown/mouseup en el área de la gráfica
-2. relayoutData: Cualquier evento pausa por 2s (backup confiable)
-3. Timer: Auto-reset después de 2s sin actividad
-4. TIMELINE: Click en timeline pausa actualizaciones automáticas
-"""
+import time
 
 import plotly.graph_objects as go
-import time
-from dash import Input, Output, State, no_update, ctx, html
+from dash import Input, Output, State, ctx, no_update
+
 from src.py.brain_viz.brain_visualizer import brain_viz
 from src.py.brain_viz.simple_timeline_callbacks import register_simple_timeline_callbacks
 
 
+_INTERACTION_DEFAULT = {"is_interacting": False, "last_interaction": 0.0}
+_PAUSE_TRIGGER_IDS = {"timer", "memory"}
+
+
 def register_brain_callbacks(app):
     """Registrar callbacks del cerebro con la aplicación Dash."""
-    
-    # Registrar callbacks del timeline simplificado
+
     register_simple_timeline_callbacks(app)
-    
-    # ClientsideCallback simplificado para detección de mouse
+
     app.clientside_callback(
         """
         function(n_intervals) {
             try {
-                // Estado simple para tracking de mouse
                 if (typeof window.mouseTracker === 'undefined') {
-                    window.mouseTracker = {
-                        isPressed: false,
-                        lastUpdate: 0
-                    };
-                    
-                    // Instalar listeners globales una sola vez
-                    document.addEventListener('mousedown', function(e) {
-                        // Solo si es en el área de la gráfica
-                        const target = e.target;
+                    window.mouseTracker = { isPressed: false, lastUpdate: 0 };
+
+                    document.addEventListener('mousedown', function (event) {
                         const graphContainer = document.getElementById('brain_graph');
-                        if (graphContainer && graphContainer.contains(target)) {
-                            console.log('🖱️ MOUSEDOWN en gráfica - PAUSANDO');
+                        if (graphContainer && graphContainer.contains(event.target)) {
                             window.mouseTracker.isPressed = true;
                             window.mouseTracker.lastUpdate = Date.now() / 1000;
                         }
                     });
-                    
-                    document.addEventListener('mouseup', function(e) {
+
+                    document.addEventListener('mouseup', function () {
                         if (window.mouseTracker.isPressed) {
-                            console.log('🖱️ MOUSEUP detectado - REANUDANDO');
                             window.mouseTracker.isPressed = false;
                             window.mouseTracker.lastUpdate = Date.now() / 1000;
                         }
                     });
-                    
-                    console.log('✅ Mouse tracker instalado globalmente');
                 }
-                
+
                 return {
                     is_interacting: window.mouseTracker.isPressed,
                     last_interaction: window.mouseTracker.lastUpdate
                 };
-                
             } catch (error) {
-                console.error('Error en mouse tracker:', error);
-                return {is_interacting: false, last_interaction: 0};
+                console.error('Mouse tracker error:', error);
+                return { is_interacting: false, last_interaction: 0 };
             }
         }
         """,
-        Output('brain_interaction_store', 'data', allow_duplicate=True),
-        [Input('interaction_timer', 'n_intervals')],
-        prevent_initial_call=True
+        Output("brain_interaction_store", "data", allow_duplicate=True),
+        Input("interaction_timer", "n_intervals"),
+        prevent_initial_call=True,
     )
 
-    # ALTERNATIVA: Si el ClientsideCallback falla, usar solo Python con detección más agresiva
     @app.callback(
-        Output('brain_interaction_store', 'data', allow_duplicate=True),
-        [Input('brain_graph', 'relayoutData'),
-         Input('interaction_timer', 'n_intervals')],
-        [State('brain_interaction_store', 'data')],
-        prevent_initial_call=True
+        Output("brain_interaction_store", "data", allow_duplicate=True),
+        Input("brain_graph", "relayoutData"),
+        Input("interaction_timer", "n_intervals"),
+        State("brain_interaction_store", "data"),
+        prevent_initial_call=True,
     )
-    def handle_brain_interaction_backup(relayout_data, n_intervals, interaction_state):
-        """
-        Callback de backup para detección de interacción cuando falla el clientside.
-        Solo actualiza cuando detecta actividad en relayoutData.
-        """
+    def detect_interaction(relayout_data, _interval, interaction_state):
+        state = _merge_interaction_state(interaction_state)
         triggered_id = ctx.triggered_id if ctx.triggered else None
-        
-        if not interaction_state:
-            interaction_state = {'is_interacting': False, 'last_interaction': 0}
-        
-        if triggered_id == 'brain_graph' and relayout_data:
-            # Relayout detectado - pausar por 2 segundos
-            current_time = time.time()
-            print(f"🎯 RELAYOUT DETECTADO - PAUSANDO por 2s")
-            return {
-                'is_interacting': True,
-                'last_interaction': current_time
-            }
-        
-        elif triggered_id == 'interaction_timer':
-            # Timer tick - revisar si hay que reanudar
-            current_time = time.time()
-            last_interaction = interaction_state.get('last_interaction', 0)
-            
-            # Auto-reanudar después de 2 segundos sin actividad
-            if current_time - last_interaction > 2.0 and interaction_state.get('is_interacting'):
-                print(f"⏰ AUTO-REANUDANDO después de 2s")
-                return {
-                    'is_interacting': False,
-                    'last_interaction': last_interaction
-                }
-            
-            return interaction_state
-        
-        # Mantener estado actual
-        return interaction_state
+        now = time.time()
+
+        if triggered_id == "brain_graph" and relayout_data:
+            return {"is_interacting": True, "last_interaction": now}
+
+        if triggered_id == "interaction_timer" and state["is_interacting"]:
+            if now - state["last_interaction"] > 2.0:
+                return {"is_interacting": False, "last_interaction": state["last_interaction"]}
+
+        return state
 
     @app.callback(
-        [Output('brain_graph', 'figure'),
-         Output('brain_camera_store', 'data')],
-        [Input('timer', 'n_intervals'),
-         Input('memory', 'data'),
-         Input('sensor_select', 'value'),
-         Input('quantity_select', 'value'),
-         Input('simple_timeline_mode', 'data')],  # Usar el nuevo timeline simplificado
-        [State('brain_camera_store', 'data'),
-         State('brain_interaction_store', 'data')]
+        Output("brain_graph", "figure"),
+        Output("brain_camera_store", "data"),
+        Input("timer", "n_intervals"),
+        Input("memory", "data"),
+        Input("sensor_select", "value"),
+        Input("quantity_select", "value"),
+        Input("simple_timeline_mode", "data"),
+        State("brain_camera_store", "data"),
+        State("brain_interaction_store", "data"),
     )
-    def update_brain_visualization(n_intervals, data, selected_sensor, quantity_mode, 
-                                  timeline_mode, camera_state, interaction_state):
-        """
-        Callback principal para actualizar la visualización del cerebro 3D.
-        Usa el nuevo timeline simplificado.
-        """
-        import time
-        
-        # Debug simplificado
+    def update_brain_visualization(_, memory_data, selected_sensor, quantity_mode, timeline_state, camera_state, interaction_state):
         triggered_id = ctx.triggered_id if ctx.triggered else None
-        
-        # VERIFICACION DE TIMELINE SIMPLIFICADO
-        display_data = data  # Por defecto usar datos actuales
-        mode = timeline_mode.get('mode', 'live') if timeline_mode else 'live'
-        
-        # Si estamos en modo histórico, usar datos guardados
-        if mode == 'historical' and timeline_mode.get('selected_data'):
-            display_data = timeline_mode['selected_data']
-            print(f"🕒 MODO HISTÓRICO: Usando datos de t={timeline_mode.get('selected_time', 0):.1f}s")
-        
-        # VERIFICACION DE INTERACCION
-        should_pause = False
-        if interaction_state:
-            should_pause = interaction_state.get('is_interacting', False)
-        
-        # Pausar solo si hay interacción activa Y estamos en modo live
-        if should_pause and triggered_id in ['timer', 'memory'] and mode == 'live':
-            print(f"🚫 PAUSADO - interacción activa en modo live")
-            return no_update, no_update
-        
-        # Pausar si estamos en modo pausado
-        if mode == 'paused' and triggered_id in ['timer', 'memory']:
-            print(f"⏸️ PAUSADO - modo pausado del timeline")
-            return no_update, no_update
-        
-        if not display_data or 'uid' not in display_data:
-            print(f"❌ No hay datos válidos")
-            return go.Figure().add_annotation(
-                text="Esperando datos de la sesión...",
-                xref="paper", yref="paper", x=0.5, y=0.5,
-                showarrow=False, font=dict(size=16)
-            ), camera_state
-        
-        # Continuar con actualización normal
-        try:
-            session_uid = display_data['uid']
-            
-            print(f"🔄 PROCESANDO DATOS - uid: {session_uid}, modo: {quantity_mode}, timeline: {mode}")
-            
-            # Obtener datos de sensores según el modo seleccionado
-            if quantity_mode == 'todos':
-                # Mostrar todos los sensores disponibles
-                sensors_data = {k: v for k, v in display_data.items() if k != 'uid' and v is not None}
-                sensors_data['uid'] = session_uid
-            else:  # modo 'individual'
-                # Usar solo el sensor seleccionado
-                if selected_sensor in display_data:
-                    sensors_data = {selected_sensor: display_data[selected_sensor], 'uid': session_uid}
-                else:
-                    print(f"❌ Sensor {selected_sensor} no encontrado")
-                    return go.Figure().add_annotation(
-                        text=f"No hay datos para: {selected_sensor}",
-                        xref="paper", yref="paper", x=0.5, y=0.5,
-                        showarrow=False, font=dict(size=16)
-                    ), camera_state
-            
-            if len(sensors_data) <= 1:  # Solo contiene 'uid'
-                print(f"❌ Datos insuficientes")
-                return go.Figure().add_annotation(
-                    text="No hay datos de sensores disponibles",
-                    xref="paper", yref="paper", x=0.5, y=0.5,
-                    showarrow=False, font=dict(size=16)
-                ), camera_state
-            
-            # Crear nueva figura del cerebro
-            print(f"🔄 Creando figura con {len(sensors_data)-1} sensores")
-            new_figure = brain_viz.create_live_brain_figure(sensors_data)
-            
-            # Agregar indicador del modo timeline al título
-            if mode == 'historical':
-                selected_time = timeline_mode.get('selected_time', 0)
-                current_title = new_figure.layout.title.text if new_figure.layout.title else "Visualización Cerebro 3D"
-                new_figure.update_layout(
-                    title=f"{current_title}<br><span style='color: orange; font-size: 12px;'>🕒 Modo Histórico: t={selected_time:.1f}s</span>"
-                )
-            elif mode == 'paused':
-                current_title = new_figure.layout.title.text if new_figure.layout.title else "Visualización Cerebro 3D"
-                new_figure.update_layout(
-                    title=f"{current_title}<br><span style='color: gray; font-size: 12px;'>⏸️ Pausado</span>"
-                )
-            
-            # Aplicar cámara guardada si existe
-            if camera_state and new_figure and 'layout' in new_figure:
-                if 'scene' not in new_figure['layout']:
-                    new_figure['layout']['scene'] = {}
-                
-                # Verificar que camera_state tenga la estructura correcta
-                # Puede ser: {'eye': {...}, 'center': {...}, 'up': {...}}
-                # O puede ser: {'camera': {'eye': {...}, ...}}
-                if camera_state:
-                    # Detectar si tiene estructura anidada incorrecta
-                    if 'camera' in camera_state:
-                        camera_config = camera_state['camera']
-                    elif any(k in camera_state for k in ['eye', 'center', 'up', 'projection']):
-                        camera_config = camera_state
-                    else:
-                        camera_config = None
-                    
-                    if camera_config:
-                        # Limpiar cualquier clave 'scene' incorrecta
-                        clean_camera = {k: v for k, v in camera_config.items() 
-                                       if k in ['eye', 'center', 'up', 'projection']}
-                        
-                        if clean_camera:
-                            new_figure['layout']['scene']['camera'] = clean_camera
-                            print(f"✅ Aplicada cámara guardada: {list(clean_camera.keys())}")
-            
-            print(f"✅ CEREBRO ACTUALIZADO: modo={mode}, sensores={len(sensors_data)-1}, uid={session_uid}")
-            return new_figure, camera_state
-            
-        except Exception as e:
-            print(f"❌ Error en callback: {e}")
-            return go.Figure().add_annotation(
-                text=f"Error: {str(e)}",
-                xref="paper", yref="paper", x=0.5, y=0.5,
-                showarrow=False, font=dict(size=16, color="red")
-            ), camera_state
+        timeline_state = timeline_state or {}
+        timeline_mode = timeline_state.get("mode", "live")
+        interaction_state = _merge_interaction_state(interaction_state)
 
+        if interaction_state["is_interacting"] and triggered_id in _PAUSE_TRIGGER_IDS and timeline_mode == "live":
+            return no_update, camera_state
+
+        if timeline_mode in {"paused", "historical"} and triggered_id in _PAUSE_TRIGGER_IDS:
+            return no_update, camera_state
+
+        active_data = timeline_state.get("selected_data") if timeline_mode == "historical" else memory_data
+        if not active_data or "uid" not in active_data:
+            return _build_message_figure("Esperando datos de la sesión..."), camera_state
+
+        sensors_data = _build_sensor_payload(active_data, quantity_mode, selected_sensor)
+        if sensors_data is None:
+            return _build_message_figure(f"No hay datos para: {selected_sensor}"), camera_state
+
+        if len(sensors_data) <= 1:
+            return _build_message_figure("No hay datos de sensores disponibles"), camera_state
+
+        figure = brain_viz.create_live_brain_figure(sensors_data)
+        _apply_timeline_title(figure, timeline_mode, timeline_state.get("selected_time"))
+
+        camera_settings = _extract_camera(camera_state)
+        if camera_settings:
+            figure.update_layout(scene=dict(camera=camera_settings))
+
+        normalized_camera = _pack_camera(camera_settings) if camera_settings else camera_state
+        return figure, normalized_camera
 
     @app.callback(
-        Output('brain_camera_store', 'data', allow_duplicate=True),
-        [Input('brain_graph', 'relayoutData')],
-        [State('brain_camera_store', 'data')],
-        prevent_initial_call=True
+        Output("brain_camera_store", "data", allow_duplicate=True),
+        Input("brain_graph", "relayoutData"),
+        State("brain_camera_store", "data"),
+        prevent_initial_call=True,
     )
     def store_brain_camera_state(relayout_data, current_state):
-        """
-        Callback para capturar y guardar cambios de cámara del usuario.
-        Funciona como respaldo al uirevision para máxima robustez.
-        """
         if not relayout_data:
             return current_state
-        
-        # Buscar datos de cámara en relayoutData
-        camera_data = {}
-        has_camera_data = False
-        
-        for key, value in relayout_data.items():
-            if 'scene.camera' in key:
-                has_camera_data = True
-                # Extraer solo la parte después de 'scene.camera.'
-                # Ej: 'scene.camera.eye.x' -> ['eye', 'x']
-                camera_path = key.replace('scene.camera.', '')
-                keys = camera_path.split('.')
-                
-                # Construir estructura jerárquica correctamente
-                current = camera_data
-                for k in keys[:-1]:
-                    if k not in current:
-                        current[k] = {}
-                    current = current[k]
-                current[keys[-1]] = value
-        
-        if has_camera_data:
-            # Validar que no haya claves incorrectas
-            valid_keys = {'eye', 'center', 'up', 'projection'}
-            camera_data = {k: v for k, v in camera_data.items() if k in valid_keys}
-            
-            if camera_data:
-                print(f"📷 Guardando nueva posición de cámara: {list(camera_data.keys())}")
-                return camera_data
-        
-        # Si no hay datos de cámara pero sí relayoutData, mantener estado actual
-        return current_state if current_state else {}
+
+        camera_data = relayout_data.get("scene.camera")
+        if not camera_data:
+            camera_data = relayout_data.get("scene", {}).get("camera") if isinstance(relayout_data.get("scene"), dict) else None
+
+        if camera_data:
+            return _pack_camera(camera_data)
+
+        return current_state
+
+
+def _merge_interaction_state(state):
+    return {**_INTERACTION_DEFAULT, **(state or {})}
+
+
+def _build_sensor_payload(data, quantity_mode, selected_sensor):
+    uid = data.get("uid")
+    payload = {"uid": uid}
+
+    if quantity_mode == "todos":
+        for key, value in data.items():
+            if key != "uid" and value is not None:
+                payload[key] = value
+        return payload
+
+    sensor_data = data.get(selected_sensor)
+    if sensor_data is None:
+        return None
+
+    payload[selected_sensor] = sensor_data
+    return payload
+
+
+def _apply_timeline_title(figure, timeline_mode, selected_time):
+    if not figure.layout.title:
+        figure.update_layout(title="Visualización Cerebro 3D")
+
+    base_title = figure.layout.title.text or "Visualización Cerebro 3D"
+    if isinstance(base_title, str):
+        base_title = base_title.split("<br><span")[0]
+
+    if timeline_mode == "historical" and selected_time is not None:
+        figure.update_layout(title=f"{base_title}<br><span style='color: orange; font-size: 12px;'>🕒 Modo Histórico: t={selected_time:.1f}s</span>")
+    elif timeline_mode == "paused":
+        figure.update_layout(title=f"{base_title}<br><span style='color: gray; font-size: 12px;'>⏸️ Pausado</span>")
+
+
+def _build_message_figure(message):
+    fig = go.Figure()
+    fig.add_annotation(text=message, xref="paper", yref="paper", x=0.5, y=0.5, showarrow=False, font=dict(size=16))
+    fig.update_layout(template="plotly_white")
+    return fig
+
+
+def _extract_camera(state):
+    if not state:
+        return None
+
+    if isinstance(state, dict) and "eye" in state:
+        return state
+
+    if isinstance(state, dict):
+        camera = state.get("camera")
+        if isinstance(camera, dict):
+            return camera
+
+    return None
+
+
+def _pack_camera(camera):
+    return {"camera": camera} if camera else None

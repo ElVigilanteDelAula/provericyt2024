@@ -1,5 +1,5 @@
 from dash import dcc, html
-import plotly.graph_objects as go
+
 from src.py.brain_viz.brain_visualizer import brain_viz
 from src.py.brain_viz.simple_timeline import create_simple_timeline
 
@@ -11,12 +11,9 @@ def create_brain_component():
     - dash.html.Div: Componente de visualización del cerebro con timeline
     """
     
-    # Crear figura inicial del cerebro
     initial_figure = brain_viz.create_brain_figure()
-    
-    # Crear el timeline component simplificado
     timeline_component = create_simple_timeline()
-    
+
     brain_graph = html.Div([
         # Store para mantener el estado de la cámara
         dcc.Store(id='brain_camera_store', data={}),

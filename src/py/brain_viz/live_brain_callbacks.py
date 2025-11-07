@@ -1,285 +1,111 @@
-"""
-Callbacks para actualizaciones de visualización del cerebro en vivo.
-"""
+"""Callbacks para actualizaciones de la visualización 3D del cerebro."""
 
-from dash import Input, Output, State, callback, no_update, Patch, ctx
+import plotly.graph_objects as go
+from dash import Input, Output, Patch, State, callback, ctx, no_update
+
 from src.py.brain_viz.brain_visualizer import brain_viz
 
-@callback(
-    Output('brain_camera_store', 'data', allow_duplicate=True),
-    Input('brain_graph', 'relayoutData'),
-    State('brain_camera_store', 'data'),
-    prevent_initial_call=True
-)
-def store_brain_camera_state(relayout_data, current_camera_state):
-    """
-    Capturar y almacenar cambios en la posición de la cámara del cerebro 3D.
-    
-    Parámetros:
-    - relayout_data: Datos de cambios de layout del gráfico (incluye cámara)
-    - current_camera_state: Estado actual almacenado de la cámara
-    
-    Retorna:
-    - dict: Estado actualizado de la cámara
-    """
-    if not relayout_data:
-        return no_update
-    
-    # Buscar cambios en la configuración de la cámara
-    updated_camera = current_camera_state.copy() if current_camera_state else {}
-    
-    # Extraer configuración de la cámara si está presente
-    scene_keys = [key for key in relayout_data.keys() if key.startswith('scene.camera')]
-    
-    if scene_keys:
-        # Actualizar configuración de cámara
-        for key in scene_keys:
-            if key == 'scene.camera.eye.x':
-                if 'eye' not in updated_camera:
-                    updated_camera['eye'] = {}
-                updated_camera['eye']['x'] = relayout_data[key]
-            elif key == 'scene.camera.eye.y':
-                if 'eye' not in updated_camera:
-                    updated_camera['eye'] = {}
-                updated_camera['eye']['y'] = relayout_data[key]
-            elif key == 'scene.camera.eye.z':
-                if 'eye' not in updated_camera:
-                    updated_camera['eye'] = {}
-                updated_camera['eye']['z'] = relayout_data[key]
-            elif key == 'scene.camera.center.x':
-                if 'center' not in updated_camera:
-                    updated_camera['center'] = {}
-                updated_camera['center']['x'] = relayout_data[key]
-            elif key == 'scene.camera.center.y':
-                if 'center' not in updated_camera:
-                    updated_camera['center'] = {}
-                updated_camera['center']['y'] = relayout_data[key]
-            elif key == 'scene.camera.center.z':
-                if 'center' not in updated_camera:
-                    updated_camera['center'] = {}
-                updated_camera['center']['z'] = relayout_data[key]
-            elif key == 'scene.camera.up.x':
-                if 'up' not in updated_camera:
-                    updated_camera['up'] = {}
-                updated_camera['up']['x'] = relayout_data[key]
-            elif key == 'scene.camera.up.y':
-                if 'up' not in updated_camera:
-                    updated_camera['up'] = {}
-                updated_camera['up']['y'] = relayout_data[key]
-            elif key == 'scene.camera.up.z':
-                if 'up' not in updated_camera:
-                    updated_camera['up'] = {}
-                updated_camera['up']['z'] = relayout_data[key]
-        
-        return updated_camera
-    
-    return no_update
-
-"""
-Callbacks para actualizaciones de visualización del cerebro en vivo.
-"""
-
-from dash import Input, Output, State, callback, no_update, Patch, ctx
-from src.py.brain_viz.brain_visualizer import brain_viz
 
 @callback(
-    Output('brain_camera_store', 'data'),
-    Input('brain_graph', 'relayoutData'),
-    State('brain_camera_store', 'data'),
-    prevent_initial_call=True
+    Output("brain_camera_store", "data", allow_duplicate=True),
+    Input("brain_graph", "relayoutData"),
+    State("brain_camera_store", "data"),
+    prevent_initial_call=True,
 )
 def store_brain_camera_state(relayout_data, current_camera_state):
-    """
-    Capturar y almacenar cambios en la posición de la cámara del cerebro 3D.
-    
-    Parámetros:
-    - relayout_data: Datos de cambios de layout del gráfico (incluye cámara)
-    - current_camera_state: Estado actual almacenado de la cámara
-    
-    Retorna:
-    - dict: Estado actualizado de la cámara
-    """
+    """Persistir la posición actual de la cámara cada vez que el usuario interactúa."""
     if not relayout_data:
         return no_update
-    
-    # Buscar cambios en la configuración de la cámara
-    updated_camera = current_camera_state.copy() if current_camera_state else {}
-    
-    # Extraer configuración de la cámara si está presente
-    scene_keys = [key for key in relayout_data.keys() if key.startswith('scene.camera')]
-    
-    if scene_keys:
-        # Actualizar configuración de cámara
-        for key in scene_keys:
-            if key == 'scene.camera.eye.x':
-                if 'eye' not in updated_camera:
-                    updated_camera['eye'] = {}
-                updated_camera['eye']['x'] = relayout_data[key]
-            elif key == 'scene.camera.eye.y':
-                if 'eye' not in updated_camera:
-                    updated_camera['eye'] = {}
-                updated_camera['eye']['y'] = relayout_data[key]
-            elif key == 'scene.camera.eye.z':
-                if 'eye' not in updated_camera:
-                    updated_camera['eye'] = {}
-                updated_camera['eye']['z'] = relayout_data[key]
-            elif key == 'scene.camera.center.x':
-                if 'center' not in updated_camera:
-                    updated_camera['center'] = {}
-                updated_camera['center']['x'] = relayout_data[key]
-            elif key == 'scene.camera.center.y':
-                if 'center' not in updated_camera:
-                    updated_camera['center'] = {}
-                updated_camera['center']['y'] = relayout_data[key]
-            elif key == 'scene.camera.center.z':
-                if 'center' not in updated_camera:
-                    updated_camera['center'] = {}
-                updated_camera['center']['z'] = relayout_data[key]
-            elif key == 'scene.camera.up.x':
-                if 'up' not in updated_camera:
-                    updated_camera['up'] = {}
-                updated_camera['up']['x'] = relayout_data[key]
-            elif key == 'scene.camera.up.y':
-                if 'up' not in updated_camera:
-                    updated_camera['up'] = {}
-                updated_camera['up']['y'] = relayout_data[key]
-            elif key == 'scene.camera.up.z':
-                if 'up' not in updated_camera:
-                    updated_camera['up'] = {}
-                updated_camera['up']['z'] = relayout_data[key]
-        
-        return updated_camera
-    
-    return no_update
+
+    camera_data = relayout_data.get("scene.camera")
+    if not camera_data:
+        camera_data = relayout_data.get("scene", {}).get("camera") if isinstance(relayout_data.get("scene"), dict) else None
+
+    if not camera_data:
+        return no_update
+
+    packed = _pack_camera(camera_data)
+    if packed == current_camera_state:
+        return no_update
+
+    return packed
+
 
 @callback(
     Output("brain_graph", "figure"),
     Input("memory", "data"),
-    Input('quantity_select', 'value'),
-    Input('sensor_select', 'value'),
-    State('brain_camera_store', 'data'),
+    Input("quantity_select", "value"),
+    Input("sensor_select", "value"),
+    State("brain_camera_store", "data"),
     State("brain_graph", "figure"),
-    prevent_initial_call=True
+    prevent_initial_call=True,
 )
-def update_brain_visualization(data, quantity_mode, selected_sensor, camera_state, current_figure):
-    """
-    Actualizar la visualización del cerebro 3D preservando completamente la posición de la cámara.
-    Distingue entre actualizaciones de datos vs cambios de configuración.
-    
-    Parámetros:
-    - data: Datos EEG actuales de todos los sensores
-    - quantity_mode: "individual" o "todos"
-    - selected_sensor: Sensor actualmente seleccionado
-    - camera_state: Estado guardado de la cámara
-    - current_figure: Figura actual para verificar si existe
-    
-    Retorna:
-    - plotly.graph_objects.Figure o Patch: Figura actualizada
-    """
-    if not data:
+def update_brain_visualization(memory_data, quantity_mode, selected_sensor, camera_state, current_figure):
+    """Actualizar la figura del cerebro preservando la cámara cuando sea posible."""
+    if not memory_data:
         return no_update
-    
-    # Detectar qué input disparó el callback
-    triggered_id = ctx.triggered_id if ctx.triggered else None
-    is_data_update = triggered_id == "memory"
-    is_config_change = triggered_id in ["quantity_select", "sensor_select"]
-    
-    # Si no hay figura actual, crear una nueva (solo al inicio)
-    if current_figure is None or not current_figure.get('data'):
-        if quantity_mode == "individual":
-            if selected_sensor in data:
-                sensor_data = {selected_sensor: data[selected_sensor], 'uid': data.get('uid', '')}
-                new_figure = brain_viz.create_live_brain_figure(sensor_data)
-            else:
-                new_figure = brain_viz.create_brain_figure()
-        else:  # quantity_mode == "todos"
-            new_figure = brain_viz.create_live_brain_figure(data)
-        
-        # Aplicar estado de cámara guardado si existe
-        if camera_state and new_figure:
-            if 'layout' not in new_figure:
-                new_figure['layout'] = {}
-            if 'scene' not in new_figure['layout']:
-                new_figure['layout']['scene'] = {}
-            new_figure['layout']['scene']['camera'] = camera_state
-        
-        return new_figure
-    
-    # Si es un cambio de configuración (sensor/modo), recrear figura con cámara preservada
-    if is_config_change:
-        print(f"🔄 CONFIG CHANGE: sensor={selected_sensor}, mode={quantity_mode}")
-        print(f"📷 Camera state: {camera_state}")
-        
-        if quantity_mode == "individual":
-            if selected_sensor in data:
-                sensor_data = {selected_sensor: data[selected_sensor], 'uid': data.get('uid', '')}
-                new_figure = brain_viz.create_live_brain_figure(sensor_data)
-            else:
-                return no_update
-        else:  # quantity_mode == "todos"
-            new_figure = brain_viz.create_live_brain_figure(data)
-        
-        # CRÍTICO: Aplicar estado de cámara guardado si existe
-        if camera_state and new_figure:
-            print(f"🎯 Applying saved camera state: {camera_state}")
-            if 'layout' not in new_figure:
-                new_figure['layout'] = {}
-            if 'scene' not in new_figure['layout']:
-                new_figure['layout']['scene'] = {}
-            
-            # Aplicar la cámara guardada
-            new_figure['layout']['scene']['camera'] = camera_state.copy()
-            
-            # CLAVE: Usar uirevision para mantener la interacción del usuario
-            new_figure['layout']['scene']['uirevision'] = 'brain_camera'
-            new_figure['layout']['uirevision'] = 'brain_layout'
-        else:
-            print("⚠️ No camera state to apply or no figure created")
-            # Incluso sin estado de cámara, usar uirevision
-            if new_figure and 'layout' in new_figure:
-                if 'scene' not in new_figure['layout']:
-                    new_figure['layout']['scene'] = {}
-                new_figure['layout']['scene']['uirevision'] = 'brain_camera'
-                new_figure['layout']['uirevision'] = 'brain_layout'
-        
-        return new_figure
-    
-    # Si es solo actualización de datos, usar Patch sin tocar la cámara
-    if is_data_update:
-        # Determinar qué datos usar según el modo
-        if quantity_mode == "individual":
-            if selected_sensor in data:
-                sensor_data = {selected_sensor: data[selected_sensor], 'uid': data.get('uid', '')}
-            else:
-                return no_update
-        else:  # quantity_mode == "todos"
-            sensor_data = data
-        
-        # Obtener nuevas intensidades
-        intensity_update = brain_viz.update_live_brain_intensity(sensor_data)
-        
-        if intensity_update is None:
+
+    triggered_id = ctx.triggered_id or ""
+    sensors_data = _build_sensor_payload(memory_data, quantity_mode, selected_sensor)
+    if sensors_data is None:
+        return no_update
+
+    requires_rebuild = triggered_id in {"quantity_select", "sensor_select"} or not _figure_has_mesh(current_figure)
+
+    if requires_rebuild:
+        figure = brain_viz.create_live_brain_figure(sensors_data)
+        _apply_camera(figure, camera_state)
+        _insert_uirevision(figure)
+        return figure
+
+    if triggered_id == "memory":
+        intensity_update = brain_viz.update_live_brain_intensity(sensors_data)
+        if not intensity_update:
             return no_update
-        
-        # Usar Patch SOLO para actualizar intensidades, NO tocar la cámara
-        patched_figure = Patch()
-        
+
+        patch = Patch()
         try:
-            # Actualizar intensidad del hemisferio derecho (trace 0)
-            if 'intensity_right' in intensity_update:
-                patched_figure['data'][0]['intensity'] = intensity_update['intensity_right']
-            
-            # Actualizar intensidad del hemisferio izquierdo (trace 1)  
-            if 'intensity_left' in intensity_update:
-                patched_figure['data'][1]['intensity'] = intensity_update['intensity_left']
-            
-            # IMPORTANTE: NO tocar la cámara en actualizaciones de datos
-            # Esto permite que Plotly mantenga naturalmente la posición actual
-                
-        except (KeyError, IndexError, TypeError):
-            # Si hay algún problema con el patch, no actualizar nada
+            if "intensity_right" in intensity_update:
+                patch["data"][0]["intensity"] = intensity_update["intensity_right"]
+            if "intensity_left" in intensity_update:
+                patch["data"][1]["intensity"] = intensity_update["intensity_left"]
+        except (IndexError, KeyError, TypeError):
             return no_update
-        
-        return patched_figure
-    
+
+        return patch
+
     return no_update
+
+
+def _pack_camera(camera):
+    return {"camera": camera} if camera else None
+
+
+def _build_sensor_payload(data, quantity_mode, selected_sensor):
+    uid = data.get("uid")
+    if quantity_mode == "todos":
+        payload = {"uid": uid}
+        for key, value in data.items():
+            if key != "uid" and value is not None:
+                payload[key] = value
+        return payload if len(payload) > 1 else None
+
+    sensor_data = data.get(selected_sensor)
+    if sensor_data is None:
+        return None
+
+    return {selected_sensor: sensor_data, "uid": uid}
+
+
+def _figure_has_mesh(figure):
+    return bool(figure and getattr(figure, "data", None))
+
+
+def _apply_camera(figure, camera_state):
+    camera = camera_state.get("camera") if isinstance(camera_state, dict) else None
+    if camera:
+        figure.update_layout(scene=dict(camera=camera.copy()))
+
+
+def _insert_uirevision(figure):
+    figure.update_layout(scene=dict(uirevision="brain_camera"), uirevision="brain_layout")

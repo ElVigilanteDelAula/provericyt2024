@@ -5,6 +5,102 @@ Componente de visualización 3D del cerebro usando nilearn y plotly.
 import numpy as np
 import plotly.graph_objects as go
 
+
+def _compute_bounds(coords):
+    x = coords[:, 0]
+    y = coords[:, 1]
+    z = coords[:, 2]
+    return {
+        'x_min': float(x.min()),
+        'x_max': float(x.max()),
+        'y_min': float(y.min()),
+        'y_max': float(y.max()),
+        'z_min': float(z.min()),
+        'z_max': float(z.max()),
+    }
+
+
+def _brain_span(bounds):
+    return np.sqrt(
+        (bounds['x_max'] - bounds['x_min']) ** 2
+        + (bounds['y_max'] - bounds['y_min']) ** 2
+        + (bounds['z_max'] - bounds['z_min']) ** 2
+    )
+
+
+def _normalize_metric(value):
+    return (value - 50) * 6 / 50
+
+
+def _coverage_radius(brain_span, coverage_factor, base_factor):
+    return brain_span * base_factor * coverage_factor
+
+
+def _apply_fade(intensity, coords, center, radius, multiplier):
+    if radius <= 0:
+        return
+
+    distances = np.linalg.norm(coords - center, axis=1)
+    mask = distances <= radius
+    if not np.any(mask):
+        return
+
+    fade = (1 - distances[mask] / radius) * multiplier
+    intensity[mask] += fade
+
+
+def _center_parietal_left(bounds):
+    return np.array([
+        bounds['x_min'] + (bounds['x_max'] - bounds['x_min']) * 0.3,
+        bounds['y_min'] + (bounds['y_max'] - bounds['y_min']) * 0.2,
+        bounds['z_min'] + (bounds['z_max'] - bounds['z_min']) * 0.7,
+    ])
+
+
+def _center_frontal_left(bounds):
+    return np.array([
+        bounds['x_min'] + (bounds['x_max'] - bounds['x_min']) * 0.3,
+        bounds['y_max'] - (bounds['y_max'] - bounds['y_min']) * 0.2,
+        bounds['z_min'] + (bounds['z_max'] - bounds['z_min']) * 0.6,
+    ])
+
+
+def _center_front_midline(bounds):
+    x_center = (bounds['x_min'] + bounds['x_max']) / 2
+    return np.array([
+        x_center * 0.4,
+        bounds['y_min'] * -0.62,
+        bounds['z_max'] * 0.21,
+    ])
+
+
+def _center_frontal_right(bounds):
+    return np.array([
+        bounds['x_max'] - (bounds['x_max'] - bounds['x_min']) * 0.3,
+        bounds['y_max'] - (bounds['y_max'] - bounds['y_min']) * 0.2,
+        bounds['z_min'] + (bounds['z_max'] - bounds['z_min']) * 0.6,
+    ])
+
+
+def _center_parietal_right(bounds):
+    return np.array([
+        bounds['x_max'] - (bounds['x_max'] - bounds['x_min']) * 0.3,
+        bounds['y_min'] + (bounds['y_max'] - bounds['y_min']) * 0.2,
+        bounds['z_min'] + (bounds['z_max'] - bounds['z_min']) * 0.7,
+    ])
+
+
+_SENSOR_CONFIG = {
+    'sensor_a': [{'side': 'left', 'center_fn': _center_parietal_left, 'metric': 'attention', 'base_factor': 0.25}],
+    'sensor_b': [{'side': 'left', 'center_fn': _center_frontal_left, 'metric': 'attention', 'base_factor': 0.25}],
+    'sensor_c': [
+        {'side': 'right', 'center_fn': _center_front_midline, 'metric': 'attention', 'base_factor': 0.2},
+        {'side': 'left', 'center_fn': _center_front_midline, 'metric': 'attention', 'base_factor': 0.2},
+    ],
+    'sensor_d': [{'side': 'right', 'center_fn': _center_frontal_right, 'metric': 'meditation', 'base_factor': 0.25}],
+    'sensor_e': [{'side': 'right', 'center_fn': _center_parietal_right, 'metric': 'meditation', 'base_factor': 0.25}],
+}
+
 class BrainVisualizer:
     """
     Visualizador 3D del cerebro usando datos de superficie de nilearn y plotly para el renderizado.
@@ -18,6 +114,12 @@ class BrainVisualizer:
         self.reference_map_right = None
         self.reference_map_left = None
         self.fig = None
+        self.coords_right = None
+        self.coords_left = None
+        self.bounds_right = None
+        self.bounds_left = None
+        self.brain_span_right = 0.0
+        self.brain_span_left = 0.0
         self._initialized = False
         
     def _lazy_init(self):
@@ -41,6 +143,14 @@ class BrainVisualizer:
             # Obtener mapas de activación de referencia
             self.reference_map_right = surface.vol_to_surf(motor_img, self.mesh_right)
             self.reference_map_left = surface.vol_to_surf(motor_img, self.mesh_left)
+
+            # Pre-calcular metadatos geométricos para minimizar trabajo posterior
+            self.coords_right = self.mesh_right.coordinates
+            self.coords_left = self.mesh_left.coordinates
+            self.bounds_right = _compute_bounds(self.coords_right)
+            self.bounds_left = _compute_bounds(self.coords_left)
+            self.brain_span_right = _brain_span(self.bounds_right)
+            self.brain_span_left = _brain_span(self.bounds_left)
             
             self._initialized = True
             return True
@@ -170,128 +280,43 @@ class BrainVisualizer:
         """
         if not self._initialized:
             return None, None
-            
-        # Inicializar mapas de intensidad con ceros
+
         intensity_right = np.zeros_like(self.reference_map_right)
         intensity_left = np.zeros_like(self.reference_map_left)
-        
-        # Obtener coordenadas de malla del cerebro para mapeo de regiones
-        coords_right = self.mesh_right.coordinates
-        coords_left = self.mesh_left.coordinates
-        
-        # Calcular límites del cerebro para mapeo de regiones
-        x_min_r, x_max_r = coords_right[:, 0].min(), coords_right[:, 0].max()
-        y_min_r, y_max_r = coords_right[:, 1].min(), coords_right[:, 1].max()
-        z_min_r, z_max_r = coords_right[:, 2].min(), coords_right[:, 2].max()
-        
-        x_min_l, x_max_l = coords_left[:, 0].min(), coords_left[:, 0].max()
-        y_min_l, y_max_l = coords_left[:, 1].min(), coords_left[:, 1].max()
-        z_min_l, z_max_l = coords_left[:, 2].min(), coords_left[:, 2].max()
-        
-        # Dimensiones del cerebro para cálculos de distancia
-        brain_size_r = np.sqrt((x_max_r - x_min_r)**2 + (y_max_r - y_min_r)**2 + (z_max_r - z_min_r)**2)
-        brain_size_l = np.sqrt((x_max_l - x_min_l)**2 + (y_max_l - y_min_l)**2 + (z_max_l - z_min_l)**2)
-        
-        # Procesar cada sensor
+
+        side_data = {
+            'left': {
+                'intensity': intensity_left,
+                'coords': self.coords_left,
+                'bounds': self.bounds_left,
+                'span': self.brain_span_left,
+            },
+            'right': {
+                'intensity': intensity_right,
+                'coords': self.coords_right,
+                'bounds': self.bounds_right,
+                'span': self.brain_span_right,
+            },
+        }
+
         for sensor_name, sensor_data in all_sensors_data.items():
-            if sensor_name == 'uid':  # Omitir campo uid
+            if sensor_name == 'uid' or not sensor_data:
                 continue
-                
-            # Extraer valores del sensor
-            attention = sensor_data.get('attention', 50)
-            meditation = sensor_data.get('meditation', 50)
-            signal_strength = sensor_data.get('signal_strength', 50)
-            
-            # Normalizar atención y meditación al rango -6 a 6
-            attention_norm = (attention - 50) * 6 / 50
-            meditation_norm = (meditation - 50) * 6 / 50
-            
-            # La fuerza de la señal controla la cobertura del área (0-100 → 0.1-1.0)
-            coverage_factor = (signal_strength / 100.0) * 0.9 + 0.1  # Mín 10%, Máx 100%
-            
-            # Mapear sensores a regiones del cerebro con efecto de mapa de calor basado en posiciones estándar de EEG
-            if sensor_name == 'sensor_a':  # P3 - Lóbulo Parietal Izquierdo
-                # Definir punto central para posición P3 (parietal izquierdo - región posterior)
-                center_l = np.array([x_min_l + (x_max_l - x_min_l) * 0.3, 
-                                   y_min_l + (y_max_l - y_min_l) * 0.2,  # Posterior (atrás)
-                                   z_min_l + (z_max_l - z_min_l) * 0.7])
-                
-                distances_l = np.sqrt(np.sum((coords_left - center_l)**2, axis=1))
-                max_distance_l = brain_size_l * 0.25 * coverage_factor
-                
-                fade_mask_l = distances_l <= max_distance_l
-                fade_intensity_l = np.zeros_like(distances_l)
-                fade_intensity_l[fade_mask_l] = (1 - distances_l[fade_mask_l] / max_distance_l) * attention_norm
-                intensity_left += fade_intensity_l
-                
-            elif sensor_name == 'sensor_b':  # F3 - Corteza Frontal Izquierda
-                # Definir punto central para posición F3 (frontal izquierdo - región anterior)
-                center_l = np.array([x_min_l + (x_max_l - x_min_l) * 0.3, 
-                                   y_max_l - (y_max_l - y_min_l) * 0.2,  # Anterior (frente)
-                                   z_min_l + (z_max_l - z_min_l) * 0.6])
-                
-                distances_l = np.sqrt(np.sum((coords_left - center_l)**2, axis=1))
-                max_distance_l = brain_size_l * 0.25 * coverage_factor
-                
-                fade_mask_l = distances_l <= max_distance_l
-                fade_intensity_l = np.zeros_like(distances_l)
-                fade_intensity_l[fade_mask_l] = (1 - distances_l[fade_mask_l] / max_distance_l) * attention_norm
-                intensity_left += fade_intensity_l
-                
-            elif sensor_name == 'sensor_c':  # FPz - Línea Media de la Frente (Tierra)
-                # Definir puntos centrales para posición FPz (frontal de línea media - muy adelante)
-                center_r = np.array([((x_min_r + x_max_r) / 2) * 0.4, 
-                                   (y_max_r - (y_max_r - y_min_r)) * -0.62,  # Muy anterior (frente)
-                                   z_max_r * 0.21])  # Parte superior del cerebro
-                center_l = np.array([((x_min_l + x_max_l) / 2) * 0.4, 
-                                  ( y_max_l - (y_max_l - y_min_l)) * -0.62 ,  # Muy anterior (frente)
-                                   z_max_l * 0.21])  # Parte superior del cerebro
-                 # Aplicar al hemisferio derecho
-                distances_r = np.sqrt(np.sum((coords_right - center_r)**2, axis=1))
-                max_distance_r = brain_size_r * 0.2 * coverage_factor
-                
-                fade_mask_r = distances_r <= max_distance_r
-                fade_intensity_r = np.zeros_like(distances_r)
-                fade_intensity_r[fade_mask_r] = (1 - distances_r[fade_mask_r] / max_distance_r) * attention_norm
-                intensity_right += fade_intensity_r
-                
-                # Aplicar al hemisferio izquierdo
-                distances_l = np.sqrt(np.sum((coords_left - center_l)**2, axis=1))
-                max_distance_l = brain_size_l * 0.2 * coverage_factor
-                
-                fade_mask_l = distances_l <= max_distance_l
-                fade_intensity_l = np.zeros_like(distances_l)
-                fade_intensity_l[fade_mask_l] = (1 - distances_l[fade_mask_l] / max_distance_l) * attention_norm
-                intensity_left += fade_intensity_l
-                
-            elif sensor_name == 'sensor_d':  # F4 - Corteza Frontal Derecha
-                # Definir punto central para posición F4 (frontal derecho - región anterior)
-                center_r = np.array([x_max_r - (x_max_r - x_min_r) * 0.3, 
-                                   y_max_r - (y_max_r - y_min_r) * 0.2,  # Anterior (frente)
-                                   z_min_r + (z_max_r - z_min_r) * 0.6])
-                
-                distances_r = np.sqrt(np.sum((coords_right - center_r)**2, axis=1))
-                max_distance_r = brain_size_r * 0.25 * coverage_factor
-                
-                fade_mask_r = distances_r <= max_distance_r
-                fade_intensity_r = np.zeros_like(distances_r)
-                fade_intensity_r[fade_mask_r] = (1 - distances_r[fade_mask_r] / max_distance_r) * meditation_norm
-                intensity_right += fade_intensity_r
-                
-            elif sensor_name == 'sensor_e':  # P2 - Lóbulo Parietal Derecho (entre Pz y T6)
-                # Definir punto central para posición P2 (parietal derecho - región posterior)
-                center_r = np.array([x_max_r - (x_max_r - x_min_r) * 0.3, 
-                                   y_min_r + (y_max_r - y_min_r) * 0.2,  # Posterior (atrás)
-                                   z_min_r + (z_max_r - z_min_r) * 0.7])
-                
-                distances_r = np.sqrt(np.sum((coords_right - center_r)**2, axis=1))
-                max_distance_r = brain_size_r * 0.25 * coverage_factor
-                
-                fade_mask_r = distances_r <= max_distance_r
-                fade_intensity_r = np.zeros_like(distances_r)
-                fade_intensity_r[fade_mask_r] = (1 - distances_r[fade_mask_r] / max_distance_r) * meditation_norm
-                intensity_right += fade_intensity_r
-        
+
+            attention_norm = _normalize_metric(sensor_data.get('attention', 50))
+            meditation_norm = _normalize_metric(sensor_data.get('meditation', 50))
+            coverage_factor = (sensor_data.get('signal_strength', 50) / 100.0) * 0.9 + 0.1
+
+            for config in _SENSOR_CONFIG.get(sensor_name, []):
+                side = side_data.get(config['side'])
+                if not side or side['span'] <= 0:
+                    continue
+
+                center = config['center_fn'](side['bounds'])
+                radius = _coverage_radius(side['span'], coverage_factor, config['base_factor'])
+                multiplier = attention_norm if config['metric'] == 'attention' else meditation_norm
+                _apply_fade(side['intensity'], side['coords'], center, radius, multiplier)
+
         return intensity_right, intensity_left
     
     def create_live_brain_figure(self, all_sensors_data):

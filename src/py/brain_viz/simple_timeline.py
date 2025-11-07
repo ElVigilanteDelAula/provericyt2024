@@ -4,7 +4,6 @@ Utiliza extendData para mejor rendimiento y evita problemas de redibujado.
 """
 
 import plotly.graph_objects as go
-import numpy as np
 from dash import dcc, html
 import dash_bootstrap_components as dbc
 
