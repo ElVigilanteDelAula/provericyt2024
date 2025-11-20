@@ -68,12 +68,32 @@ class Database:
              return 1
         
 
+    def session_info_exists(self, uid:int)-> bool:
+        '''
+        revisa que la información de la sesión ya exista en la tabla session
+        '''
+        conn = sqlite3.connect(self.db)
+        with closing(conn.cursor()) as cur:
+            tmplist = cur.execute(
+                '''
+                SELECT id FROM session WHERE id = ?
+                ''',
+                (uid,)
+            ).fetchall()
+        conn.close()
+
+        if tmplist == []:
+             return False
+        else:
+             return True
+
     def record_session_info(self, uid:int, sensors:list, notes:str) -> None:
         '''
         registra los datos de los campos que se pueden llenar en la tabla de las sesiones
         '''
         conn = sqlite3.connect(self.db)
         with closing(conn.cursor()) as cur:
+            try:
                 cur.execute(
                     '''
                     INSERT INTO "session" ("id","sensors","notes")
@@ -82,6 +102,9 @@ class Database:
                     (uid, len(sensors), notes)
                 )
                 conn.commit()
+            except sqlite3.IntegrityError:
+                # La sesión ya existe, no hacer nada
+                pass
         conn.close()
 
     def update_notes(self, uid:int, notes:str) -> None:
