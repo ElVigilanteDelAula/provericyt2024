@@ -1,5 +1,42 @@
 # UwU
 
+## Instalación rápida (obligatoria)
+
+1. Crea tu entorno virtual y ejecuta `pip install -r requirements.txt`.
+2. **Siempre** corre `python check_setup.py` antes del primer uso (y cada vez que cambies de máquina) para validar que todas las dependencias, datos de `nilearn` y configuraciones locales estén correctas.
+3. Si el script marca algún error, sigue las instrucciones que imprime y vuelve a ejecutarlo hasta ver todos los checks en verde.
+
+## Configuración de `config.json`
+
+
+1. Duplica `config_template.json` y renómbralo como `config.json` en la raíz del proyecto.
+2. Ajusta los valores según tu entorno:
+     - `database_path`: archivo SQLite donde se guardarán las sesiones (p.ej. `test.db`).
+     - `parameters`: lista de métricas que reportan los sensores (debe coincidir con el orden real del dispositivo).
+     - `parameter_map`: mapa nombre → índice para interpretar cada lectura.
+     - `sensors`: URLs de cada sensor/ESP8266 que entrega los datos.
+     - `sensors_map`: asigna a cada sensor el índice que se usará en la BD y las gráficas.
+     - `events`: catálogo de eventos/etiquetas que se podrán registrar desde la UI.
+
+Ejemplo de estructura (usa tus propias direcciones IP y parámetros reales):
+
+```json
+{
+    "database_path": "test.db",
+    "parameters": ["signal_strength", "attention", "meditation", "delta", "theta", "low_alpha", "high_alpha", "low_beta", "high_beta", "low_gamma", "high_gamma"],
+    "parameter_map": {"signal_strength": 0, "attention": 1, "meditation": 2, "delta": 3, "theta": 4, "low_alpha": 5, "high_alpha": 6, "low_beta": 7, "high_beta": 8, "low_gamma": 9, "high_gamma": 10},
+    "sensors": {
+        "sensor_a": "http://127.0.0.1:5000/",
+        "sensor_b": "http://127.0.0.1:5000/",
+        "sensor_c": "http://127.0.0.1:5000/",
+        "sensor_d": "http://127.0.0.1:5000/",
+        "sensor_e": "http://127.0.0.1:5000/"
+    },
+    "sensors_map": {"sensor_a": 0, "sensor_b": 1, "sensor_c": 2, "sensor_d": 3, "sensor_e": 4},
+    "events": {"evento1": "tag1", "evento2": "tag2"}
+}
+```
+
 ## Aplicaciones
 
 + `app.py` es un explorador de la base de datos
